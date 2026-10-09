@@ -1,0 +1,31 @@
+services:
+  - type: web
+    name: rentgoer-backend
+    env: node
+    buildCommand: npm install && npx prisma generate && npm run build
+    startCommand: npm start
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: 5000
+      - key: DATABASE_URL
+        sync: false
+      - key: DIRECT_URL
+        sync: false
+      - key: JWT_SECRET
+        sync: false
+      - key: FRONTEND_URL
+        sync: false
+      - key: SUPABASE_URL
+        sync: false
+      - key: SUPABASE_SERVICE_ROLE_KEY
+        sync: false
+      - key: AUTH_RATE_LIMIT_MAX
+        value: 50
+      - key: API_RATE_LIMIT_MAX
+        value: 1000
+      - key: NOTIFICATION_SSE_MAX_CONNECTIONS_PER_USER
+        value: 3
+      - key: CONVERSATION_SSE_MAX_CONNECTIONS_PER_USER
+        value: 5
