@@ -14,7 +14,7 @@ export const useConversationRealtime = (conversationId: string, onNewMessage: (m
     // The browser automatically attaches HttpOnly cookies (`rentgoer_token`) to this request
     // if withCredentials is true. EventSource supports withCredentials.
     
-    const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api';
+    const API_URL = process.env.NEXT_PUBLIC_API_URL || '/api/proxy';
     const eventSource = new EventSource(`${API_URL}/conversations/${conversationId}/realtime`, {
       withCredentials: true
     });

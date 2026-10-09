@@ -45,7 +45,7 @@ export const NotificationProvider = ({ children }: { children: ReactNode }) => {
     if (user) {
       fetchNotifications();
 
-      const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api';
+      const API_URL = process.env.NEXT_PUBLIC_API_URL || '/api/proxy';
       const eventSource = new EventSource(`${API_URL}/notifications/realtime`, {
         withCredentials: true
       });

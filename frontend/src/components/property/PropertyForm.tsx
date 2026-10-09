@@ -129,7 +129,7 @@ export const PropertyForm = ({ initialData, isEdit = false }: PropertyFormProps)
 
     try {
       // Direct fetch to include FormData safely with credentials
-      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api'}/properties/${initialData.id}/images`, {
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || '/api/proxy'}/properties/${initialData.id}/images`, {
         method: 'POST',
         body: formPayload,
         credentials: 'include',
