@@ -1,4 +1,8 @@
-export const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || '/api/proxy';
+const isServer = typeof window === 'undefined';
+
+export const API_BASE_URL = isServer
+  ? (process.env.NEXT_PUBLIC_BACKEND_URL ? `${process.env.NEXT_PUBLIC_BACKEND_URL}/api` : 'http://localhost:5000/api')
+  : (process.env.NEXT_PUBLIC_API_URL || '/api/proxy');
 
 interface FetchOptions extends RequestInit {
   params?: Record<string, any>;
@@ -31,6 +35,22 @@ async function apiRequest<T>(endpoint: string, options: FetchOptions = {}): Prom
     // Required to send and receive cookies from backend for auth
     credentials: 'include',
   };
+
+  if (isServer) {
+    try {
+      const { cookies } = await import('next/headers');
+      const cookieStore = await cookies();
+      const token = cookieStore.get('rentgoer_token')?.value;
+      if (token) {
+        config.headers = {
+          ...config.headers,
+          Cookie: `rentgoer_token=${token}`
+        };
+      }
+    } catch (e) {
+      // Ignore errors when cookies() is used outside of request context
+    }
+  }
 
   const response = await fetch(url, config);
   const data = await response.json();
