@@ -24,6 +24,7 @@ import messageRoutes from './routes/message.routes';
 
 
 import { errorHandler } from './middleware/error.middleware';
+import { prisma } from './lib/prisma';
 
 dotenv.config();
 
@@ -83,8 +84,14 @@ app.use('/api/users', userRoutes);
 app.use('/api/messages', messageRoutes);
 
 // Health Endpoint
-app.get('/api/health', (req: Request, res: Response) => {
-  res.status(200).json({ status: 'ok', message: 'Backend is running successfully' });
+app.get('/api/health', async (req: Request, res: Response) => {
+  try {
+    await prisma.$queryRaw`SELECT 1`;
+    res.status(200).json({ status: 'ok', message: 'Backend and database are running successfully' });
+  } catch (error) {
+    console.error('Database connection failed during health check. Please verify database service and network connectivity.');
+    res.status(503).json({ status: 'error', message: 'Backend is running, but database connection failed' });
+  }
 });
 
 // 7. Global Error Handler
