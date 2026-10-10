@@ -224,17 +224,41 @@ export const acceptRequest = async (req: Request, res: Response): Promise<void> 
         throw new Error('CONFLICT_AVAILABILITY');
       }
 
-      // 1. Mark request as ACCEPTED
-      const acceptedRequest = await tx.rentalRequest.update({
-        where: { id: requestId },
-        data: { status: 'ACCEPTED' },
-        include: { property: true }
+      // 1. Atomically mark property as unavailable FIRST.
+      // Locking the parent Property row first establishes a consistent lock ordering across transactions,
+      // preventing deadlocks when concurrent acceptances occur for the same property.
+      const updatePropResult = await tx.property.updateMany({
+        where: {
+          id: request.propertyId,
+          isAvailable: true
+        },
+        data: {
+          isAvailable: false
+        }
       });
 
-      // 2. Mark property as unavailable
-      await tx.property.update({
-        where: { id: request.propertyId },
-        data: { isAvailable: false }
+      if (updatePropResult.count === 0) {
+        throw new Error('CONFLICT_AVAILABILITY');
+      }
+
+      // 2. Mark request as ACCEPTED atomically
+      const updateReqResult = await tx.rentalRequest.updateMany({
+        where: {
+          id: requestId,
+          status: 'PENDING'
+        },
+        data: {
+          status: 'ACCEPTED'
+        }
+      });
+
+      if (updateReqResult.count === 0) {
+        throw new Error('CONFLICT_STATUS');
+      }
+
+      const acceptedRequest = await tx.rentalRequest.findUnique({
+        where: { id: requestId },
+        include: { property: true }
       });
 
       // 3. Mark all other PENDING requests for this property as REJECTED
@@ -245,18 +269,23 @@ export const acceptRequest = async (req: Request, res: Response): Promise<void> 
           id: { not: requestId }
         }
       });
-      await tx.rentalRequest.updateMany({
-        where: {
-          propertyId: request.propertyId,
-          status: 'PENDING',
-          id: { not: requestId }
-        },
-        data: { status: 'REJECTED' }
-      });
 
-      // 4. Create Conversation
-      await tx.conversation.create({
-        data: {
+      if (otherRequests.length > 0) {
+        await tx.rentalRequest.updateMany({
+          where: {
+            propertyId: request.propertyId,
+            status: 'PENDING',
+            id: { not: requestId }
+          },
+          data: { status: 'REJECTED' }
+        });
+      }
+
+      // 4. Create Conversation atomically via upsert (guarantees exactly one conversation exists)
+      await tx.conversation.upsert({
+        where: { rentalRequestId: requestId },
+        update: {},
+        create: {
           rentalRequestId: requestId,
           propertyId: request.propertyId,
           tenantId: request.tenantId,
@@ -264,8 +293,14 @@ export const acceptRequest = async (req: Request, res: Response): Promise<void> 
         }
       });
 
-      // 5. Notify the accepted tenant
-      notificationToEmit = await tx.notification.create({
+      return { acceptedRequest, request, otherRequests };
+    }, { timeout: 15000, maxWait: 10000 });
+
+    const { acceptedRequest, request, otherRequests } = result;
+
+    // 5. Create notifications asynchronously outside the critical database transaction to prevent timeouts
+    try {
+      notificationToEmit = await prisma.notification.create({
         data: {
           userId: request.tenantId,
           type: 'REQUEST_ACCEPTED',
@@ -275,22 +310,29 @@ export const acceptRequest = async (req: Request, res: Response): Promise<void> 
         }
       });
 
-      // 6. Notify rejected tenants
-      for (const otherReq of otherRequests) {
-        const n = await tx.notification.create({
-          data: {
-            userId: otherReq.tenantId,
-            type: 'REQUEST_REJECTED',
-            title: 'Request Rejected',
-            message: `Your rental request for "${request.property.title}" was not accepted.`,
-            referenceId: otherReq.id
-          }
-        });
-        otherNotificationsToEmit.push(n);
-      }
+      if (otherRequests.length > 0) {
+        const rejectedNotificationsData = otherRequests.map(otherReq => ({
+          userId: otherReq.tenantId,
+          type: 'REQUEST_REJECTED' as const,
+          title: 'Request Rejected',
+          message: `Your rental request for "${request.property.title}" was not accepted.`,
+          referenceId: otherReq.id
+        }));
 
-      return acceptedRequest;
-    });
+        try {
+          otherNotificationsToEmit = await prisma.notification.createManyAndReturn({
+            data: rejectedNotificationsData
+          });
+        } catch {
+          await prisma.notification.createMany({
+            data: rejectedNotificationsData
+          });
+          otherNotificationsToEmit = rejectedNotificationsData;
+        }
+      }
+    } catch (notifErr) {
+      console.error('Failed to create notifications for accepted request:', notifErr);
+    }
 
     if (notificationToEmit) {
       import('../lib/realtime-notifications').then(m => m.emitNotification(notificationToEmit.userId, notificationToEmit)).catch(console.error);
@@ -299,7 +341,7 @@ export const acceptRequest = async (req: Request, res: Response): Promise<void> 
       import('../lib/realtime-notifications').then(m => m.emitNotification(n.userId, n)).catch(console.error);
     }
 
-    res.status(200).json({ success: true, data: result });
+    res.status(200).json({ success: true, data: acceptedRequest });
   } catch (error: any) {
     if (error.message === 'NOT_FOUND') {
       res.status(404).json({ success: false, message: 'Request not found' });
@@ -309,6 +351,12 @@ export const acceptRequest = async (req: Request, res: Response): Promise<void> 
       res.status(409).json({ success: false, message: 'Request is not PENDING' });
     } else if (error.message === 'CONFLICT_AVAILABILITY') {
       res.status(409).json({ success: false, message: 'Property is already unavailable' });
+    } else if (
+      error.code === 'P2002' ||
+      error.code === 'P2034' ||
+      (typeof error.message === 'string' && (error.message.includes('deadlock detected') || error.message.includes('40P01')))
+    ) {
+      res.status(409).json({ success: false, message: 'Conflict: request was accepted by another concurrent operation. Please refresh.' });
     } else {
       console.error('Error accepting request:', error);
       res.status(500).json({ success: false, message: 'Internal server error' });

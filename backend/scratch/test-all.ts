@@ -9,6 +9,7 @@ const tests = [
   'test-favorites.ts',
   'test-rental-requests.ts',
   'test-owner-rental-requests.ts',
+  'test-issue1-regression.ts',
   'test-chat.ts',
   'test-notifications.ts',
   'test-reviews.ts',
