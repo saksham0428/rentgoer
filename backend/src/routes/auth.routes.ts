@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import { register, login, logout, getMe } from '../controllers/auth.controller';
+import { register, login, logout, getMe, updateProfile, changePassword } from '../controllers/auth.controller';
 import { authMiddleware } from '../middleware/auth.middleware';
 import rateLimit from 'express-rate-limit';
 
@@ -21,5 +21,7 @@ router.post('/logout', authLimiter, logout);
 // getMe can use the general API limiter instead of the strict auth limiter, 
 // since it's called on every page load/refresh by the frontend.
 router.get('/me', authMiddleware, getMe);
+router.put('/profile', authMiddleware, updateProfile);
+router.put('/change-password', authMiddleware, changePassword);
 
 export default router;

@@ -279,9 +279,11 @@ export default function TenantDashboard() {
             <Home className="h-8 w-8 text-muted mx-auto mb-2" />
             <h3 className="font-semibold text-foreground">Ready to move?</h3>
             <p className="text-sm text-muted mt-1 mb-4">Complete your profile to increase your chances of request approval.</p>
-            <Button variant="outline" size="sm" className="w-full" disabled>
-              Edit Profile (Coming Soon)
-            </Button>
+            <Link href="/profile">
+              <Button variant="outline" size="sm" className="w-full">
+                Edit Profile
+              </Button>
+            </Link>
           </div>
         </div>
       </div>

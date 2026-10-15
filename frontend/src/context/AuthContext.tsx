@@ -10,6 +10,8 @@ export interface User {
   email: string;
   role: 'TENANT' | 'OWNER' | 'ADMIN';
   phone?: string | null;
+  isVerified?: boolean;
+  createdAt?: string;
 }
 
 interface AuthContextType {
