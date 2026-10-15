@@ -1,16 +1,18 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, Suspense } from 'react';
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
-import { Loader2 } from 'lucide-react';
+import { Loader2, CheckCircle2 } from 'lucide-react';
 import { api } from '@/lib/api';
 import { useAuth } from '@/context/AuthContext';
 
-export default function LoginPage() {
+function LoginContent() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const message = searchParams.get('message');
   const { refreshUser } = useAuth();
   
   const [loading, setLoading] = useState(false);
@@ -62,52 +64,90 @@ export default function LoginPage() {
             Log in to manage your properties or rental requests.
           </p>
         </div>
+
+        {message && (
+          <div className="bg-emerald-50 border border-emerald-200 text-emerald-800 px-4 py-3 rounded-lg text-sm font-medium flex items-center gap-2" role="status">
+            <CheckCircle2 className="h-4 w-4 text-emerald-600 flex-shrink-0" />
+            <span>{message}</span>
+          </div>
+        )}
         
         {error && (
-          <div className="bg-danger/10 border border-danger/20 text-danger px-4 py-3 rounded-md text-sm font-medium" role="alert">
+          <div className="bg-danger/10 border border-danger/20 text-danger px-4 py-3 rounded-lg text-sm font-medium" role="alert">
             {error}
           </div>
         )}
 
         <form className="mt-8 space-y-6" onSubmit={handleSubmit}>
           <div className="space-y-4">
-            <Input
-              id="email"
-              name="email"
-              type="email"
-              autoComplete="email"
-              required
-              label="Email address"
-              placeholder="you@example.com"
-              value={formData.email}
-              onChange={handleChange}
-            />
-            <Input
-              id="password"
-              name="password"
-              type="password"
-              autoComplete="current-password"
-              required
-              label="Password"
-              placeholder="••••••••"
-              value={formData.password}
-              onChange={handleChange}
-            />
+            <div>
+              <Input
+                label="Email address"
+                id="email"
+                name="email"
+                type="email"
+                autoComplete="email"
+                required
+                value={formData.email}
+                onChange={handleChange}
+                placeholder="you@example.com"
+              />
+            </div>
+            <div>
+              <Input
+                label="Password"
+                id="password"
+                name="password"
+                type="password"
+                autoComplete="current-password"
+                required
+                value={formData.password}
+                onChange={handleChange}
+                placeholder="••••••••"
+              />
+            </div>
           </div>
 
           <div>
-            <Button type="submit" fullWidth size="lg" disabled={loading}>
-              {loading ? <Loader2 className="h-5 w-5 animate-spin mx-auto" /> : 'Sign in'}
+            <Button
+              type="submit"
+              fullWidth
+              size="lg"
+              disabled={loading}
+            >
+              {loading ? (
+                <>
+                  <Loader2 className="animate-spin -ml-1 mr-2 h-4 w-4" />
+                  Logging in...
+                </>
+              ) : (
+                'Log in'
+              )}
             </Button>
           </div>
         </form>
-        <div className="text-center text-sm text-muted mt-4">
-          Don&apos;t have an account??{' '}
-          <Link href="/register" className="font-medium text-primary hover:text-primary-hover transition-colors">
-            Sign up
-          </Link>
+
+        <div className="text-center">
+          <p className="text-sm text-muted">
+            Don&apos;t have an account?{' '}
+            <Link href="/register" className="font-medium text-primary hover:text-primary-hover">
+              Sign up
+            </Link>
+          </p>
         </div>
       </div>
     </div>
+  );
+}
+
+export default function LoginPage() {
+  return (
+    <Suspense fallback={
+      <div className="flex-grow flex items-center justify-center py-12">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      </div>
+    }>
+      <LoginContent />
+    </Suspense>
   );
 }

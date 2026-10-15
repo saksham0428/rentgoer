@@ -4,13 +4,13 @@ import jwt from 'jsonwebtoken';
 import { prisma } from '../lib/prisma';
 import { Role } from '@prisma/client';
 
-const generateTokenAndSetCookie = (res: Response, userId: string, role: Role) => {
+const generateTokenAndSetCookie = (res: Response, userId: string, role: Role, tokenVersion: number) => {
   const secret = process.env.JWT_SECRET;
   if (!secret) {
     throw new Error('JWT_SECRET is not configured');
   }
 
-  const token = jwt.sign({ id: userId, role }, secret, { expiresIn: '7d' });
+  const token = jwt.sign({ id: userId, role, tokenVersion }, secret, { expiresIn: '7d' });
 
   const isProduction = process.env.NODE_ENV === 'production';
   
@@ -82,11 +82,12 @@ export const register = async (req: Request, res: Response): Promise<void> => {
         name: true,
         email: true,
         role: true,
+        tokenVersion: true,
         createdAt: true,
       }
     });
 
-    generateTokenAndSetCookie(res, user.id, user.role);
+    generateTokenAndSetCookie(res, user.id, user.role, user.tokenVersion);
 
     res.status(201).json({
       success: true,
@@ -126,7 +127,7 @@ export const login = async (req: Request, res: Response): Promise<void> => {
       return;
     }
 
-    generateTokenAndSetCookie(res, user.id, user.role);
+    generateTokenAndSetCookie(res, user.id, user.role, user.tokenVersion);
 
     res.status(200).json({
       success: true,
@@ -306,19 +307,25 @@ export const changePassword = async (req: Request, res: Response): Promise<void>
     const saltRounds = 10;
     const newPasswordHash = await bcrypt.hash(newPassword, saltRounds);
 
+    // Atomically update password hash and increment tokenVersion to revoke all active sessions
     await prisma.user.update({
       where: { id: userId },
       data: {
         passwordHash: newPasswordHash,
+        tokenVersion: { increment: 1 },
       },
     });
 
-    // Re-issue cookie so current session stays active
-    generateTokenAndSetCookie(res, user.id, user.role);
+    // Invalidate the current browser's authentication cookie so re-login is required
+    res.clearCookie('rentgoer_token', {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'lax',
+    });
 
     res.status(200).json({
       success: true,
-      message: 'Password changed successfully',
+      message: 'Password changed successfully. Please log in again with your new password.',
     });
   } catch (error) {
     console.error('Change password error:', error);

@@ -61,10 +61,11 @@ export const Navbar = () => {
           <div className="flex items-center gap-6 xl:gap-8">
             <Link 
               href="/" 
-              className="flex-shrink-0 flex items-center group focus:outline-none focus:ring-2 focus:ring-primary/20 rounded-lg p-0.5" 
+              className="flex-shrink-0 flex items-center group focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/25 rounded-lg p-0.5" 
               onClick={closeMenu}
+              aria-label="RentGoer Home"
             >
-              <span className="text-2xl font-black text-primary tracking-tight transition-transform group-hover:scale-[1.02]">
+              <span className="text-2xl font-black text-primary tracking-tight transition-transform duration-150 group-hover:scale-[1.02]">
                 RentGoer
               </span>
             </Link>
@@ -73,13 +74,13 @@ export const Navbar = () => {
             <div className="hidden lg:flex items-center gap-1 xl:gap-2">
               <Link
                 href="/properties"
-                className={`px-3 py-1.5 text-sm font-medium rounded-md transition-colors ${
+                className={`px-3 py-1.5 text-sm font-medium rounded-lg transition-all duration-150 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/25 active:scale-[0.98] ${
                   isActive('/properties')
                     ? 'text-primary bg-primary/10 font-semibold'
                     : 'text-foreground/80 hover:text-foreground hover:bg-muted/10'
                 }`}
               >
-                Browse Properties
+                Properties
               </Link>
 
               {!loading && user && (
@@ -88,7 +89,7 @@ export const Navbar = () => {
                     <>
                       <Link
                         href="/tenant"
-                        className={`px-3 py-1.5 text-sm font-medium rounded-md transition-colors ${
+                        className={`px-3 py-1.5 text-sm font-medium rounded-lg transition-all duration-150 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/25 active:scale-[0.98] ${
                           isActive('/tenant')
                             ? 'text-primary bg-primary/10 font-semibold'
                             : 'text-foreground/80 hover:text-foreground hover:bg-muted/10'
@@ -98,7 +99,7 @@ export const Navbar = () => {
                       </Link>
                       <Link
                         href="/rental-requests"
-                        className={`flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium rounded-md transition-colors ${
+                        className={`flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium rounded-lg transition-all duration-150 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/25 active:scale-[0.98] ${
                           isActive('/rental-requests')
                             ? 'text-primary bg-primary/10 font-semibold'
                             : 'text-foreground/80 hover:text-foreground hover:bg-muted/10'
@@ -107,17 +108,6 @@ export const Navbar = () => {
                         <ClipboardList className="h-4 w-4" />
                         Requests
                       </Link>
-                      <Link
-                        href="/favorites"
-                        className={`flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium rounded-md transition-colors ${
-                          isActive('/favorites')
-                            ? 'text-red-500 bg-red-50 font-semibold'
-                            : 'text-foreground/80 hover:text-red-500 hover:bg-red-50/50'
-                        }`}
-                      >
-                        <Heart className="h-4 w-4 text-red-500" />
-                        Saved
-                      </Link>
                     </>
                   )}
 
@@ -125,7 +115,7 @@ export const Navbar = () => {
                     <>
                       <Link
                         href="/owner"
-                        className={`px-3 py-1.5 text-sm font-medium rounded-md transition-colors ${
+                        className={`px-3 py-1.5 text-sm font-medium rounded-lg transition-all duration-150 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/25 active:scale-[0.98] ${
                           isActive('/owner') && !pathname.startsWith('/owner/requests')
                             ? 'text-primary bg-primary/10 font-semibold'
                             : 'text-foreground/80 hover:text-foreground hover:bg-muted/10'
@@ -135,7 +125,7 @@ export const Navbar = () => {
                       </Link>
                       <Link
                         href="/owner/requests"
-                        className={`flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium rounded-md transition-colors ${
+                        className={`flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium rounded-lg transition-all duration-150 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/25 active:scale-[0.98] ${
                           isActive('/owner/requests')
                             ? 'text-primary bg-primary/10 font-semibold'
                             : 'text-foreground/80 hover:text-foreground hover:bg-muted/10'
@@ -151,7 +141,7 @@ export const Navbar = () => {
                     <>
                       <Link
                         href="/admin"
-                        className={`px-3 py-1.5 text-sm font-medium rounded-md transition-colors ${
+                        className={`px-3 py-1.5 text-sm font-medium rounded-lg transition-all duration-150 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/25 active:scale-[0.98] ${
                           isActive('/admin') && !pathname.startsWith('/admin/reports')
                             ? 'text-primary bg-primary/10 font-semibold'
                             : 'text-foreground/80 hover:text-foreground hover:bg-muted/10'
@@ -161,7 +151,7 @@ export const Navbar = () => {
                       </Link>
                       <Link
                         href="/admin/reports"
-                        className={`flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium rounded-md transition-colors ${
+                        className={`flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium rounded-lg transition-all duration-150 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/25 active:scale-[0.98] ${
                           isActive('/admin/reports')
                             ? 'text-amber-600 bg-amber-50 font-semibold'
                             : 'text-foreground/80 hover:text-amber-600 hover:bg-amber-50/50'
@@ -178,13 +168,13 @@ export const Navbar = () => {
           </div>
 
           {/* 2. Desktop Utility & Profile Controls - Far Right */}
-          <div className="hidden lg:flex lg:items-center lg:space-x-2 xl:space-x-3">
+          <div className="hidden lg:flex lg:items-center lg:space-x-2 xl:space-x-2.5">
             {/* Search Action */}
             <Link href="/properties">
               <Button
                 variant="outline"
                 size="sm"
-                className="inline-flex items-center gap-1.5 h-9 px-3 rounded-lg border-border font-medium text-foreground hover:text-primary hover:border-primary/40 hover:bg-primary/5 transition-all"
+                className="inline-flex items-center gap-1.5 h-9 px-3 rounded-lg border-border font-medium text-foreground hover:text-primary hover:border-primary/40 hover:bg-primary/5 transition-all duration-150"
               >
                 <Search className="h-4 w-4 text-muted" />
                 <span>Search</span>
@@ -198,11 +188,13 @@ export const Navbar = () => {
                     {/* Sole designated speech-bubble Messages icon beside Search */}
                     <Link
                       href="/chat"
-                      className="relative p-2 text-muted hover:text-primary transition-colors rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/20 hover:bg-muted/10"
+                      className={`relative p-2 text-muted hover:text-primary transition-all duration-150 rounded-lg focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/25 hover:bg-muted/10 active:scale-95 group ${
+                        isActive('/chat') ? 'text-primary bg-primary/10' : ''
+                      }`}
                       title="Messages"
                       aria-label="Messages"
                     >
-                      <MessageSquare className="h-5 w-5" />
+                      <MessageSquare className="h-5 w-5 transition-transform duration-150 group-hover:scale-105" />
                       {unreadChatCount > 0 && (
                         <span className="absolute -top-1 -right-1 flex items-center justify-center min-w-[1.25rem] h-5 px-1 bg-primary text-white text-[10px] font-bold rounded-full shadow-xs animate-in zoom-in-75">
                           {unreadChatCount > 99 ? '99+' : unreadChatCount}
@@ -210,20 +202,42 @@ export const Navbar = () => {
                       )}
                     </Link>
 
-                    {/* Notification Bell */}
+                    {/* Notification Bell beside Messages */}
                     <Link
                       href="/notifications"
-                      className="relative p-2 text-muted hover:text-primary transition-colors rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/20 hover:bg-muted/10"
+                      className={`relative p-2 text-muted hover:text-primary transition-all duration-150 rounded-lg focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/25 hover:bg-muted/10 active:scale-95 group ${
+                        isActive('/notifications') ? 'text-primary bg-primary/10' : ''
+                      }`}
                       title="Notifications"
                       aria-label="Notifications"
                     >
-                      <Bell className="h-5 w-5" />
+                      <Bell className="h-5 w-5 transition-transform duration-150 group-hover:scale-105" />
                       {unreadCount > 0 && (
                         <span className="absolute -top-1 -right-1 flex items-center justify-center min-w-[1.25rem] h-5 px-1 bg-red-500 text-white text-[10px] font-bold rounded-full shadow-xs animate-in zoom-in-75">
                           {unreadCount > 99 ? '99+' : unreadCount}
                         </span>
                       )}
                     </Link>
+
+                    {/* Moved Saved to utility icon area: Icon-only control for authenticated tenants */}
+                    {user.role === 'TENANT' && (
+                      <Link
+                        href="/favorites"
+                        className={`relative p-2 rounded-lg transition-all duration-150 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/25 hover:bg-muted/10 active:scale-95 group ${
+                          isActive('/favorites')
+                            ? 'text-red-500 bg-red-50/90 ring-1 ring-red-200/60'
+                            : 'text-muted hover:text-red-500'
+                        }`}
+                        title="Saved Properties"
+                        aria-label="Saved Properties"
+                      >
+                        <Heart 
+                          className={`h-5 w-5 transition-transform duration-150 group-hover:scale-105 ${
+                            isActive('/favorites') ? 'fill-red-500 text-red-500' : ''
+                          }`} 
+                        />
+                      </Link>
+                    )}
 
                     {/* Profile Dropdown at the far right */}
                     <div className="pl-1">
@@ -249,12 +263,12 @@ export const Navbar = () => {
           </div>
 
           {/* 3. Mobile & Tablet Controls - below lg */}
-          <div className="flex items-center space-x-1 sm:space-x-2 lg:hidden">
+          <div className="flex items-center space-x-1 sm:space-x-1.5 lg:hidden">
             {/* Search shortcut on mobile */}
             <Link
               href="/properties"
               onClick={closeMenu}
-              className="p-1.5 sm:p-2 text-muted hover:text-primary transition-colors rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/20"
+              className="p-1.5 sm:p-2 text-muted hover:text-primary transition-all duration-150 rounded-lg focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/25 active:scale-95"
               title="Search"
               aria-label="Search"
             >
@@ -267,7 +281,7 @@ export const Navbar = () => {
                 <Link
                   href="/chat"
                   onClick={closeMenu}
-                  className="relative p-1.5 sm:p-2 text-muted hover:text-primary transition-colors rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/20"
+                  className="relative p-1.5 sm:p-2 text-muted hover:text-primary transition-all duration-150 rounded-lg focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/25 active:scale-95"
                   title="Messages"
                   aria-label="Messages"
                 >
@@ -283,7 +297,7 @@ export const Navbar = () => {
                 <Link
                   href="/notifications"
                   onClick={closeMenu}
-                  className="relative p-1.5 sm:p-2 text-muted hover:text-primary transition-colors rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/20"
+                  className="relative p-1.5 sm:p-2 text-muted hover:text-primary transition-all duration-150 rounded-lg focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/25 active:scale-95"
                   title="Notifications"
                   aria-label="Notifications"
                 >
@@ -295,6 +309,21 @@ export const Navbar = () => {
                   )}
                 </Link>
 
+                {/* Saved Properties shortcut on mobile for tenants (screens >= 375px) */}
+                {user.role === 'TENANT' && (
+                  <Link
+                    href="/favorites"
+                    onClick={closeMenu}
+                    className={`hidden xs:inline-flex p-1.5 sm:p-2 rounded-lg transition-all duration-150 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/25 active:scale-95 ${
+                      isActive('/favorites') ? 'text-red-500 bg-red-50' : 'text-muted hover:text-red-500'
+                    }`}
+                    title="Saved Properties"
+                    aria-label="Saved Properties"
+                  >
+                    <Heart className={`h-5 w-5 ${isActive('/favorites') ? 'fill-red-500 text-red-500' : ''}`} />
+                  </Link>
+                )}
+
                 {/* Profile dropdown trigger for mobile & touch */}
                 <div className="relative">
                   <ProfileDropdown align="right" />
@@ -305,7 +334,7 @@ export const Navbar = () => {
             {/* Mobile Hamburger menu toggle */}
             <button
               onClick={toggleMenu}
-              className="inline-flex items-center justify-center p-2 rounded-lg text-muted hover:text-foreground hover:bg-muted/10 focus:outline-none focus:ring-2 focus:ring-primary/25 transition-colors"
+              className="inline-flex items-center justify-center p-2 rounded-lg text-muted hover:text-foreground hover:bg-muted/10 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/25 transition-all duration-150 active:scale-95"
               aria-label="Toggle navigation menu"
               aria-expanded={isOpen}
             >
@@ -357,7 +386,7 @@ export const Navbar = () => {
                 <Link
                   href="/profile"
                   onClick={closeMenu}
-                  className="flex items-center justify-center gap-2 px-3 py-2 text-sm font-medium rounded-lg border border-border hover:bg-muted/15 transition-colors text-foreground"
+                  className="flex items-center justify-center gap-2 px-3 py-2 text-sm font-medium rounded-lg border border-border hover:bg-muted/15 transition-all duration-150 active:scale-[0.98] text-foreground"
                 >
                   <UserIcon className="h-4 w-4 text-muted" />
                   <span>Edit Profile</span>
@@ -365,7 +394,7 @@ export const Navbar = () => {
                 <Link
                   href="/profile?tab=security"
                   onClick={closeMenu}
-                  className="flex items-center justify-center gap-2 px-3 py-2 text-sm font-medium rounded-lg border border-border hover:bg-muted/15 transition-colors text-foreground"
+                  className="flex items-center justify-center gap-2 px-3 py-2 text-sm font-medium rounded-lg border border-border hover:bg-muted/15 transition-all duration-150 active:scale-[0.98] text-foreground"
                 >
                   <KeyRound className="h-4 w-4 text-muted" />
                   <span>Password</span>
@@ -381,13 +410,13 @@ export const Navbar = () => {
                 <Link
                   href="/properties"
                   onClick={closeMenu}
-                  className={`block px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
+                  className={`block px-3 py-2 rounded-lg text-sm font-medium transition-all duration-150 active:scale-[0.99] ${
                     isActive('/properties')
                       ? 'bg-primary/10 text-primary font-semibold'
                       : 'text-foreground hover:bg-muted/10'
                   }`}
                 >
-                  Browse Properties
+                  Properties
                 </Link>
 
                 {user.role === 'TENANT' && (
@@ -395,7 +424,7 @@ export const Navbar = () => {
                     <Link
                       href="/tenant"
                       onClick={closeMenu}
-                      className={`block px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
+                      className={`block px-3 py-2 rounded-lg text-sm font-medium transition-all duration-150 active:scale-[0.99] ${
                         isActive('/tenant')
                           ? 'bg-primary/10 text-primary font-semibold'
                           : 'text-foreground hover:bg-muted/10'
@@ -409,7 +438,7 @@ export const Navbar = () => {
                     <Link
                       href="/rental-requests"
                       onClick={closeMenu}
-                      className={`block px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
+                      className={`block px-3 py-2 rounded-lg text-sm font-medium transition-all duration-150 active:scale-[0.99] ${
                         isActive('/rental-requests')
                           ? 'bg-primary/10 text-primary font-semibold'
                           : 'text-foreground hover:bg-muted/10'
@@ -423,7 +452,7 @@ export const Navbar = () => {
                     <Link
                       href="/favorites"
                       onClick={closeMenu}
-                      className={`block px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
+                      className={`block px-3 py-2 rounded-lg text-sm font-medium transition-all duration-150 active:scale-[0.99] ${
                         isActive('/favorites')
                           ? 'bg-red-50 text-red-600 font-semibold'
                           : 'text-foreground hover:bg-muted/10'
@@ -442,7 +471,7 @@ export const Navbar = () => {
                     <Link
                       href="/owner"
                       onClick={closeMenu}
-                      className={`block px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
+                      className={`block px-3 py-2 rounded-lg text-sm font-medium transition-all duration-150 active:scale-[0.99] ${
                         isActive('/owner') && !pathname.startsWith('/owner/requests')
                           ? 'bg-primary/10 text-primary font-semibold'
                           : 'text-foreground hover:bg-muted/10'
@@ -456,7 +485,7 @@ export const Navbar = () => {
                     <Link
                       href="/owner/requests"
                       onClick={closeMenu}
-                      className={`block px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
+                      className={`block px-3 py-2 rounded-lg text-sm font-medium transition-all duration-150 active:scale-[0.99] ${
                         isActive('/owner/requests')
                           ? 'bg-primary/10 text-primary font-semibold'
                           : 'text-foreground hover:bg-muted/10'
@@ -470,7 +499,7 @@ export const Navbar = () => {
                     <Link
                       href="/owner/properties/new"
                       onClick={closeMenu}
-                      className="block px-3 py-2 rounded-lg text-sm font-medium text-foreground hover:bg-muted/10"
+                      className="block px-3 py-2 rounded-lg text-sm font-medium text-foreground hover:bg-muted/10 transition-all duration-150"
                     >
                       <div className="flex items-center gap-2">
                         <Plus className="h-4 w-4 text-primary" />
@@ -485,7 +514,7 @@ export const Navbar = () => {
                     <Link
                       href="/admin"
                       onClick={closeMenu}
-                      className={`block px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
+                      className={`block px-3 py-2 rounded-lg text-sm font-medium transition-all duration-150 active:scale-[0.99] ${
                         isActive('/admin')
                           ? 'bg-primary/10 text-primary font-semibold'
                           : 'text-foreground hover:bg-muted/10'
@@ -499,7 +528,7 @@ export const Navbar = () => {
                     <Link
                       href="/admin/reports"
                       onClick={closeMenu}
-                      className={`block px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
+                      className={`block px-3 py-2 rounded-lg text-sm font-medium transition-all duration-150 active:scale-[0.99] ${
                         isActive('/admin/reports')
                           ? 'bg-amber-50 text-amber-600 font-semibold'
                           : 'text-foreground hover:bg-muted/10'
@@ -516,7 +545,7 @@ export const Navbar = () => {
                 <Link
                   href="/reports"
                   onClick={closeMenu}
-                  className="block px-3 py-2 rounded-lg text-sm font-medium text-foreground hover:bg-muted/10"
+                  className="block px-3 py-2 rounded-lg text-sm font-medium text-foreground hover:bg-muted/10 transition-all duration-150"
                 >
                   <div className="flex items-center gap-2">
                     <ShieldAlert className="h-4 w-4 text-muted" />
@@ -533,7 +562,7 @@ export const Navbar = () => {
                     closeMenu();
                     logout();
                   }}
-                  className="flex items-center gap-2 w-full px-3 py-2.5 rounded-lg text-sm font-medium text-danger hover:bg-danger/10 transition-colors"
+                  className="flex items-center gap-2 w-full px-3 py-2.5 rounded-lg text-sm font-medium text-danger hover:bg-danger/10 transition-all duration-150 active:scale-[0.98]"
                 >
                   <LogOut className="h-4 w-4 text-danger" />
                   <span>Sign Out</span>
@@ -545,9 +574,9 @@ export const Navbar = () => {
               <Link
                 href="/properties"
                 onClick={closeMenu}
-                className="block px-3 py-2 rounded-lg text-sm font-medium text-foreground hover:bg-muted/10"
+                className="block px-3 py-2 rounded-lg text-sm font-medium text-foreground hover:bg-muted/10 transition-all duration-150"
               >
-                Browse Properties
+                Properties
               </Link>
               <div className="grid grid-cols-2 gap-2 pt-2 border-t border-border">
                 <Link href="/login" onClick={closeMenu}>

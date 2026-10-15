@@ -24,7 +24,7 @@ import {
 } from 'lucide-react';
 
 function ProfileContent() {
-  const { user, loading: authLoading, refreshUser } = useAuth();
+  const { user, loading: authLoading, refreshUser, logout } = useAuth();
   const router = useRouter();
   const searchParams = useSearchParams();
 
@@ -163,10 +163,16 @@ function ProfileContent() {
         confirmPassword,
       });
 
-      setPasswordSuccess(res.message || 'Password changed successfully!');
+      setPasswordSuccess(res.message || 'Password changed successfully. Redirecting to login...');
       setCurrentPassword('');
       setNewPassword('');
       setConfirmPassword('');
+
+      // Invalidate frontend auth state and redirect user to login
+      setTimeout(async () => {
+        await logout();
+        router.push('/login?message=' + encodeURIComponent('Password updated successfully. Please log in again with your new password.'));
+      }, 1200);
     } catch (err: any) {
       setPasswordError(err.message || 'Failed to change password. Please check your current password.');
     } finally {
