@@ -306,7 +306,7 @@ export default function ChatWindowPage() {
                     value={content}
                     onChange={(e) => setContent(e.target.value)}
                     onKeyDown={handleKeyDown}
-                    placeholder="Type a message... (Press Enter to send, Shift+Enter for new line)"
+                    placeholder="Type a message..."
                     className="flex-grow resize-none rounded-xl border border-border bg-background p-3 text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 max-h-32 min-h-[44px]"
                     rows={1}
                     maxLength={2000}

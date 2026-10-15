@@ -78,9 +78,9 @@ export default async function PropertyDetailsPage({ params }: PageProps) {
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 gap-4">
         <div>
           <div className="flex items-center gap-3 mb-2 flex-wrap">
-            <h1 className="text-3xl sm:text-4xl font-bold text-foreground tracking-tight">
+            <h1 className="text-2xl sm:text-4xl font-bold text-foreground tracking-tight break-words">
               {property.title}
-              {property.isVerified && <BadgeCheck className="h-6 w-6 text-blue-500 inline-block"  />}
+              {property.isVerified && <BadgeCheck className="h-6 w-6 text-blue-500 inline-block ml-2 align-text-bottom"  />}
             </h1>
             <FavoriteButton propertyId={property.id} className="relative z-10" />
             {!property.isAvailable && (
@@ -91,8 +91,8 @@ export default async function PropertyDetailsPage({ params }: PageProps) {
           </div>
           <div className="flex items-center text-muted gap-4 flex-wrap">
             <div className="flex items-center">
-              <MapPin className="h-5 w-5 mr-1" />
-              <span className="text-lg">{property.locality}, {property.city}</span>
+              <MapPin className="h-5 w-5 mr-1 flex-shrink-0" />
+              <span className="text-base sm:text-lg">{property.locality}, {property.city}</span>
             </div>
             {property.averageRating !== undefined && property.reviewCount > 0 && (
               <div className="flex items-center gap-1.5 text-amber-500 bg-amber-500/10 px-2 py-0.5 rounded-full border border-amber-500/20">
@@ -104,9 +104,9 @@ export default async function PropertyDetailsPage({ params }: PageProps) {
           </div>
         </div>
         <div className="text-left md:text-right">
-          <p className="text-4xl font-extrabold text-primary">
+          <p className="text-3xl sm:text-4xl font-extrabold text-primary">
             {formatCurrency(property.rent)}
-            <span className="text-lg text-muted font-normal">/mo</span>
+            <span className="text-base sm:text-lg text-muted font-normal">/mo</span>
           </p>
         </div>
       </div>

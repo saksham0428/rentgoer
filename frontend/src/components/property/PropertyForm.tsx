@@ -371,11 +371,11 @@ export const PropertyForm = ({ initialData, isEdit = false }: PropertyFormProps)
           </div>
         </div>
 
-        <div className="pt-6 border-t border-border flex justify-end gap-4">
-          <Link href="/owner">
-            <Button variant="ghost" type="button" disabled={loading}>Cancel</Button>
+        <div className="pt-6 border-t border-border flex flex-col-reverse sm:flex-row justify-end gap-3">
+          <Link href="/owner" className="w-full sm:w-auto">
+            <Button variant="ghost" type="button" disabled={loading} className="w-full sm:w-auto">Cancel</Button>
           </Link>
-          <Button type="submit" size="lg" disabled={loading}>
+          <Button type="submit" size="lg" disabled={loading} className="w-full sm:w-auto">
             {loading ? <Loader2 className="h-5 w-5 animate-spin" /> : isEdit ? 'Save Changes' : 'Create Property'}
           </Button>
         </div>

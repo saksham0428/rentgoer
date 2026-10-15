@@ -94,20 +94,14 @@ export default function TenantDashboard() {
         </div>
         
         <div className="flex flex-wrap items-center gap-3">
-          <Link href="/chat">
-            <Button variant="outline" className="gap-2">
-              <MessageSquare className="h-4 w-4" />
-              Messages
-            </Button>
-          </Link>
           {/* Profile Summary (Compact) */}
-          <div className="flex items-center gap-3 bg-muted/10 px-4 py-3 rounded-lg border border-border/50">
-            <div className="h-10 w-10 bg-primary/10 text-primary rounded-full flex items-center justify-center font-bold">
+          <div className="flex items-center gap-3 bg-muted/10 px-4 py-3 rounded-lg border border-border/50 max-w-full">
+            <div className="h-10 w-10 bg-primary/10 text-primary rounded-full flex items-center justify-center font-bold flex-shrink-0">
               {user.name.charAt(0).toUpperCase()}
             </div>
-            <div>
-              <p className="font-semibold text-foreground text-sm leading-tight">{user.name}</p>
-              <p className="text-xs text-muted leading-tight">{user.email}</p>
+            <div className="min-w-0">
+              <p className="font-semibold text-foreground text-sm leading-tight truncate">{user.name}</p>
+              <p className="text-xs text-muted leading-tight truncate">{user.email}</p>
             </div>
           </div>
         </div>
@@ -120,44 +114,44 @@ export default function TenantDashboard() {
       )}
 
       {/* 2 & 4. Summary Statistics */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        <div className="bg-card border border-border rounded-xl p-5 shadow-sm flex flex-col">
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
+        <div className="bg-card border border-border rounded-xl p-4 sm:p-5 shadow-sm flex flex-col">
           <div className="flex items-center gap-2 text-muted mb-2">
-            <Heart className="h-4 w-4 text-red-500" />
-            <h3 className="text-sm font-semibold">Saved Properties</h3>
+            <Heart className="h-4 w-4 text-red-500 flex-shrink-0" />
+            <h3 className="text-xs sm:text-sm font-semibold truncate">Saved Properties</h3>
           </div>
-          <p className="text-3xl font-bold text-foreground">{totalFavorites}</p>
+          <p className="text-2xl sm:text-3xl font-bold text-foreground">{totalFavorites}</p>
         </div>
         
-        <div className="bg-card border border-border rounded-xl p-5 shadow-sm flex flex-col">
+        <div className="bg-card border border-border rounded-xl p-4 sm:p-5 shadow-sm flex flex-col">
           <div className="flex items-center gap-2 text-muted mb-2">
-            <ClipboardList className="h-4 w-4 text-primary" />
-            <h3 className="text-sm font-semibold">Total Requests</h3>
+            <ClipboardList className="h-4 w-4 text-primary flex-shrink-0" />
+            <h3 className="text-xs sm:text-sm font-semibold truncate">Total Requests</h3>
           </div>
-          <p className="text-3xl font-bold text-foreground">{totalRequests}</p>
+          <p className="text-2xl sm:text-3xl font-bold text-foreground">{totalRequests}</p>
         </div>
 
-        <div className="bg-card border border-border rounded-xl p-5 shadow-sm flex flex-col">
+        <div className="bg-card border border-border rounded-xl p-4 sm:p-5 shadow-sm flex flex-col">
           <div className="flex items-center gap-2 text-muted mb-2">
-            <Clock className="h-4 w-4 text-amber-500" />
-            <h3 className="text-sm font-semibold">Pending</h3>
+            <Clock className="h-4 w-4 text-amber-500 flex-shrink-0" />
+            <h3 className="text-xs sm:text-sm font-semibold truncate">Pending</h3>
           </div>
-          <p className="text-3xl font-bold text-foreground">{pendingRequests}</p>
+          <p className="text-2xl sm:text-3xl font-bold text-foreground">{pendingRequests}</p>
         </div>
 
-        <Link href="/chat" className="bg-card border border-border rounded-xl p-5 shadow-sm flex flex-col hover:border-primary/50 transition-colors group">
+        <Link href="/rental-requests" className="bg-card border border-border rounded-xl p-4 sm:p-5 shadow-sm flex flex-col hover:border-primary/50 transition-colors group">
           <div className="flex items-center justify-between text-muted mb-2">
-            <div className="flex items-center gap-2">
-              <CheckCircle2 className="h-4 w-4 text-success" />
-              <h3 className="text-sm font-semibold group-hover:text-primary transition-colors">Accepted</h3>
+            <div className="flex items-center gap-2 min-w-0">
+              <CheckCircle2 className="h-4 w-4 text-success flex-shrink-0" />
+              <h3 className="text-xs sm:text-sm font-semibold group-hover:text-primary transition-colors truncate">Accepted</h3>
             </div>
             {acceptedRequests > 0 && (
-              <span className="text-[10px] font-semibold text-primary bg-primary/10 px-2 py-0.5 rounded-full">
-                Chat Available
+              <span className="text-[10px] font-semibold text-success bg-success/10 px-2 py-0.5 rounded-full flex-shrink-0">
+                Active
               </span>
             )}
           </div>
-          <p className="text-3xl font-bold text-foreground">{acceptedRequests}</p>
+          <p className="text-2xl sm:text-3xl font-bold text-foreground">{acceptedRequests}</p>
         </Link>
       </div>
 
@@ -226,7 +220,7 @@ export default function TenantDashboard() {
             ) : (
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                 {recentFavorites.map((property: any) => (
-                  <div key={property.id} className="h-72">
+                  <div key={property.id} className="flex flex-col">
                     <PropertyCard
                       id={property.id}
                       title={property.title}

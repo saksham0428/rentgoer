@@ -87,12 +87,6 @@ export default function RentalRequestsPage() {
           </h1>
           <p className="text-muted mt-2">Track the status of properties you have applied for.</p>
         </div>
-        <Link href="/chat">
-          <Button variant="outline" className="gap-2">
-            <MessageSquare className="h-4 w-4" />
-            Messages
-          </Button>
-        </Link>
       </div>
 
       {requests.length === 0 ? (

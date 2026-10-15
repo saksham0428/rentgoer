@@ -97,13 +97,13 @@ export const RentalRequestCard = ({ request }: RentalRequestCardProps) => {
             <p className="whitespace-pre-wrap">{request.message}</p>
           </div>
 
-          <div className="mt-auto pt-4 border-t border-border flex justify-between items-center flex-wrap gap-4">
+          <div className="mt-auto pt-4 border-t border-border flex flex-col sm:flex-row justify-between sm:items-center gap-3">
             <div className="flex items-center text-muted text-xs">
-              <Calendar className="h-4 w-4 mr-1" />
-              Requested on: {new Date(request.createdAt).toLocaleDateString()}
+              <Calendar className="h-4 w-4 mr-1 flex-shrink-0" />
+              <span>Requested on: {new Date(request.createdAt).toLocaleDateString()}</span>
             </div>
 
-            <div className="flex items-center gap-3">
+            <div className="flex items-center gap-2 flex-wrap">
               {error && <span className="text-xs text-danger">{error}</span>}
               {request.status === 'ACCEPTED' && (
                 <RentalRequestChatButton

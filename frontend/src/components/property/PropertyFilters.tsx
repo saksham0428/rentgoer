@@ -73,20 +73,20 @@ export const PropertyFilters = () => {
     <div className="w-full">
       {/* Mobile Toggle & Quick Search */}
       <div className="flex flex-col md:flex-row gap-4 mb-6">
-        <form onSubmit={applyFilters} className="flex-grow flex gap-2">
+        <form onSubmit={applyFilters} className="flex-grow flex flex-col sm:flex-row gap-2">
           <Input 
             placeholder="City..." 
             value={filters.city}
             onChange={(e) => handleChange('city', e.target.value)}
-            className="w-full md:w-48"
+            className="w-full sm:w-48"
           />
           <Input 
             placeholder="Locality..." 
             value={filters.locality}
             onChange={(e) => handleChange('locality', e.target.value)}
-            className="w-full md:w-48"
+            className="w-full sm:w-48"
           />
-          <Button type="submit" className="hidden md:flex">Search</Button>
+          <Button type="submit" className="w-full sm:w-auto">Search</Button>
         </form>
         <div className="flex gap-2">
           <Select
@@ -104,12 +104,12 @@ export const PropertyFilters = () => {
               { label: 'Rent: Low to High', value: 'rent_asc' },
               { label: 'Rent: High to Low', value: 'rent_desc' },
             ]}
-            className="w-full md:w-48"
+            className="flex-grow sm:flex-grow-0 sm:w-48"
           />
           <Button 
             variant="outline" 
             onClick={() => setIsOpen(!isOpen)}
-            className="flex items-center gap-2 whitespace-nowrap"
+            className="flex items-center gap-2 whitespace-nowrap flex-shrink-0"
           >
             <Filter className="h-4 w-4" />
             <span className="hidden sm:inline">More Filters</span>
@@ -119,15 +119,15 @@ export const PropertyFilters = () => {
 
       {/* Expanded Filters */}
       {isOpen && (
-        <div className="bg-card border border-border p-6 rounded-xl mb-8 shadow-sm">
+        <div className="bg-card border border-border p-4 sm:p-6 rounded-xl mb-8 shadow-sm">
           <div className="flex justify-between items-center mb-4">
             <h3 className="font-semibold text-lg">Advanced Filters</h3>
-            <button onClick={() => setIsOpen(false)} className="text-muted hover:text-foreground">
+            <button onClick={() => setIsOpen(false)} className="text-muted hover:text-foreground p-1 rounded-md">
               <X className="h-5 w-5" />
             </button>
           </div>
           
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
             <div className="flex gap-2">
               <Input 
                 type="number"
@@ -208,11 +208,11 @@ export const PropertyFilters = () => {
             />
           </div>
 
-          <div className="mt-6 flex justify-end gap-4 border-t border-border pt-6">
-            <Button variant="ghost" onClick={clearFilters}>
+          <div className="mt-6 flex flex-col-reverse sm:flex-row justify-end gap-3 border-t border-border pt-6">
+            <Button variant="ghost" onClick={clearFilters} className="w-full sm:w-auto">
               Clear All
             </Button>
-            <Button onClick={applyFilters}>
+            <Button onClick={applyFilters} className="w-full sm:w-auto">
               Apply Filters
             </Button>
           </div>

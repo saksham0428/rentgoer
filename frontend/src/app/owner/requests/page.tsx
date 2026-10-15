@@ -84,11 +84,6 @@ export default function OwnerRequestsPage() {
           <p className="text-muted mt-2">Manage incoming rental applications for your properties.</p>
         </div>
         <div className="flex items-center gap-3">
-          <Link href="/chat">
-            <Button variant="outline" className="gap-2">
-              <MessageSquare className="h-4 w-4" /> Messages
-            </Button>
-          </Link>
           <Link href="/owner">
             <Button variant="outline" className="gap-2">
               <Home className="h-4 w-4" /> My Properties

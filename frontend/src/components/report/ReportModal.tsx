@@ -62,8 +62,8 @@ export const ReportModal = ({ targetType, targetId, onClose, onSuccess }: Report
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
-      <div className="bg-card w-full max-w-md rounded-xl shadow-xl overflow-hidden flex flex-col">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/50 backdrop-blur-sm">
+      <div className="bg-card w-full max-w-md max-h-[90vh] rounded-xl shadow-xl overflow-hidden flex flex-col">
         <div className="flex justify-between items-center p-5 border-b border-border bg-muted/5">
           <h2 className="text-xl font-bold flex items-center gap-2 text-foreground">
             <AlertTriangle className="h-5 w-5 text-danger" />
@@ -85,7 +85,7 @@ export const ReportModal = ({ targetType, targetId, onClose, onSuccess }: Report
             <p className="text-muted">Thank you for helping us keep the community safe. Our team will review this report shortly.</p>
           </div>
         ) : (
-          <form onSubmit={handleSubmit} className="p-5 flex flex-col gap-4">
+          <form onSubmit={handleSubmit} className="p-5 flex flex-col gap-4 overflow-y-auto">
             <p className="text-sm text-muted">
               Please provide details about why you are reporting this {targetType.toLowerCase()}. False reports may result in account suspension.
             </p>
@@ -126,19 +126,19 @@ export const ReportModal = ({ targetType, targetId, onClose, onSuccess }: Report
               </div>
             )}
 
-            <div className="flex gap-3 justify-end mt-2 pt-4 border-t border-border">
+            <div className="flex flex-col-reverse sm:flex-row gap-2 sm:gap-3 justify-end mt-2 pt-4 border-t border-border">
               <button
                 type="button"
                 onClick={onClose}
                 disabled={loading}
-                className="px-4 py-2 border border-border text-foreground rounded-lg hover:bg-muted font-medium transition-colors disabled:opacity-50"
+                className="w-full sm:w-auto px-4 py-2 border border-border text-foreground rounded-lg hover:bg-muted font-medium transition-colors disabled:opacity-50 text-center"
               >
                 Cancel
               </button>
               <button
                 type="submit"
                 disabled={loading}
-                className="px-4 py-2 bg-danger text-white rounded-lg hover:bg-danger/90 font-medium transition-colors disabled:opacity-50 flex items-center gap-2"
+                className="w-full sm:w-auto px-4 py-2 bg-danger text-white rounded-lg hover:bg-danger/90 font-medium transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
               >
                 {loading && <Loader2 className="h-4 w-4 animate-spin" />}
                 Submit Report

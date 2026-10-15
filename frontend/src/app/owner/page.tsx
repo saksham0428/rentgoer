@@ -135,12 +135,6 @@ export default function OwnerDashboard() {
               Requests
             </Button>
           </Link>
-          <Link href="/chat">
-            <Button variant="outline" className="flex items-center gap-2">
-              <MessageSquare className="h-4 w-4" />
-              Messages
-            </Button>
-          </Link>
           <Link href="/owner/properties/new">
             <Button className="flex items-center gap-2">
               <Plus className="h-4 w-4" />

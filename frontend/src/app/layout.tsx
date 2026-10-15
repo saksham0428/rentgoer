@@ -1,4 +1,4 @@
-import type { Metadata } from 'next';
+import type { Metadata, Viewport } from 'next';
 import { Geist, Geist_Mono } from 'next/font/google';
 import './globals.css';
 import { Navbar } from '@/components/layout/Navbar';
@@ -17,6 +17,12 @@ const geistMono = Geist_Mono({
   subsets: ['latin'],
 });
 
+export const viewport: Viewport = {
+  width: 'device-width',
+  initialScale: 1,
+  maximumScale: 5,
+};
+
 export const metadata: Metadata = {
   title: 'RentGoer | Find your place. Skip the broker.',
   description: 'The modern direct rental marketplace connecting tenants and property owners.',
@@ -28,13 +34,13 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="en">
-      <body className={`${geistSans.variable} ${geistMono.variable} antialiased min-h-screen flex flex-col`}>
+    <html lang="en" className="h-full">
+      <body className={`${geistSans.variable} ${geistMono.variable} antialiased min-h-screen flex flex-col w-full overflow-x-hidden`}>
         <AuthProvider>
           <NotificationProvider>
             <FavoritesProvider>
               <Navbar />
-              <main className="flex-grow flex flex-col">
+              <main className="flex-grow flex flex-col w-full min-w-0">
                 {children}
               </main>
               <Footer />

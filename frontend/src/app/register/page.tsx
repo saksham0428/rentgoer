@@ -72,8 +72,8 @@ export default function RegisterPage() {
   };
 
   return (
-    <div className="flex-grow flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8 bg-background">
-      <div className="max-w-md w-full space-y-8 bg-card p-8 rounded-xl border border-border shadow-sm">
+    <div className="flex-grow flex items-center justify-center py-8 sm:py-12 px-3 sm:px-6 lg:px-8 bg-background">
+      <div className="max-w-md w-full space-y-6 sm:space-y-8 bg-card p-6 sm:p-8 rounded-xl border border-border shadow-sm">
         <div>
           <h2 className="text-center text-3xl font-extrabold text-foreground tracking-tight">
             Create an account

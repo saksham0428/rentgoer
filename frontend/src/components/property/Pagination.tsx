@@ -41,7 +41,7 @@ export const Pagination = ({ page, totalPages, searchParams }: PaginationProps) 
   };
 
   return (
-    <div className="flex justify-center items-center gap-2 mt-12">
+    <div className="flex flex-wrap justify-center items-center gap-1.5 sm:gap-2 mt-12 px-2">
       {page > 1 ? (
         <Link href={createPageUrl(page - 1)}>
           <Button variant="outline">Previous</Button>

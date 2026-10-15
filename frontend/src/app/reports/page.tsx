@@ -83,17 +83,17 @@ export default function ReportsPage() {
 
   return (
     <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-10 w-full flex-grow flex flex-col">
-      <div className="mb-8 border-b border-border pb-4 flex justify-between items-end">
+      <div className="mb-8 border-b border-border pb-4 flex flex-col sm:flex-row justify-between sm:items-end gap-4">
         <div>
-          <h1 className="text-3xl font-bold text-foreground tracking-tight flex items-center gap-3">
-            <ShieldAlert className="h-8 w-8 text-danger" />
+          <h1 className="text-2xl sm:text-3xl font-bold text-foreground tracking-tight flex items-center gap-3">
+            <ShieldAlert className="h-8 w-8 text-danger flex-shrink-0" />
             My Reports
           </h1>
-          <p className="text-muted mt-2">Track the status of the issues you have reported.</p>
+          <p className="text-muted mt-2 text-sm sm:text-base">Track the status of the issues you have reported.</p>
         </div>
         <button 
           onClick={fetchReports}
-          className="flex items-center gap-2 px-3 py-1.5 text-sm font-medium text-muted hover:text-foreground transition-colors bg-muted/10 rounded-md border border-border/50"
+          className="self-start sm:self-auto flex items-center gap-2 px-3 py-1.5 text-sm font-medium text-muted hover:text-foreground transition-colors bg-muted/10 rounded-md border border-border/50"
         >
           <RefreshCw className={`h-4 w-4 ${loading ? 'animate-spin' : ''}`} />
           Refresh
@@ -132,7 +132,7 @@ export default function ReportsPage() {
                   
                   {/* Left Side: Type & Reason */}
                   <div className="flex-grow">
-                    <div className="flex items-center gap-3 mb-2">
+                    <div className="flex items-center gap-2 flex-wrap mb-2">
                       <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-semibold bg-muted border border-border uppercase">
                         {formatTarget(report.targetType)}
                       </span>

@@ -3,7 +3,7 @@
 import React, { useState } from 'react';
 import Link from 'next/link';
 import { Button } from '@/components/ui/Button';
-import { Menu, X, User as UserIcon, Heart, ClipboardList, Bell, MessageSquare } from 'lucide-react';
+import { Menu, X, User as UserIcon, Heart, ClipboardList, Bell, MessageSquare, ShieldAlert } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
 import { useNotifications } from '@/context/NotificationContext';
 import { useUnreadChatCount } from '@/hooks/useUnreadChatCount';
@@ -15,29 +15,33 @@ export const Navbar = () => {
   const { unreadChatCount } = useUnreadChatCount();
 
   const toggleMenu = () => setIsOpen(!isOpen);
+  const closeMenu = () => setIsOpen(false);
 
   return (
     <nav className="bg-card border-b border-border sticky top-0 z-50">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex justify-between h-16">
+        <div className="flex justify-between items-center h-16">
           <div className="flex items-center">
-            <Link href="/" className="flex-shrink-0 flex items-center">
+            <Link href="/" className="flex-shrink-0 flex items-center" onClick={closeMenu}>
               <span className="text-2xl font-bold text-primary tracking-tight">RentGoer</span>
             </Link>
           </div>
           
-          {/* Desktop Nav */}
-          <div className="hidden sm:ml-6 sm:flex sm:items-center sm:space-x-4">
-            <Link href="/properties" className="px-3 py-2 text-sm font-medium text-foreground hover:text-primary transition-colors">
+          {/* Desktop Nav - lg and above */}
+          <div className="hidden lg:flex lg:items-center lg:space-x-4">
+            <Link 
+              href="/properties" 
+              className="px-3 py-2 text-sm font-medium text-foreground hover:text-primary transition-colors"
+            >
               Browse Properties
             </Link>
             
             {!loading && (
               <>
                 {user ? (
-                  <div className="flex items-center space-x-4 ml-4 pl-4 border-l border-border">
+                  <div className="flex items-center space-x-2 xl:space-x-3 ml-2 pl-3 border-l border-border">
                     {user.role === 'OWNER' && (
-                      <div className="flex space-x-2">
+                      <div className="flex items-center space-x-1.5">
                         <Link href="/owner">
                           <Button variant="ghost" size="sm" className="text-muted hover:text-primary hover:bg-primary/5">
                             Properties
@@ -49,21 +53,10 @@ export const Navbar = () => {
                             Requests
                           </Button>
                         </Link>
-                        <Link href="/chat">
-                          <Button variant="ghost" size="sm" className="text-muted hover:text-primary hover:bg-primary/5 relative">
-                            <MessageSquare className="h-4 w-4 mr-1.5" />
-                            Messages
-                            {unreadChatCount > 0 && (
-                              <span className="ml-1.5 px-1.5 py-0.2 rounded-full text-[10px] font-bold bg-primary text-white">
-                                {unreadChatCount > 99 ? '99+' : unreadChatCount}
-                              </span>
-                            )}
-                          </Button>
-                        </Link>
                       </div>
                     )}
                     {user.role === 'TENANT' && (
-                      <div className="flex space-x-2">
+                      <div className="flex items-center space-x-1.5">
                         <Link href="/tenant">
                           <Button variant="ghost" size="sm" className="text-muted hover:text-primary hover:bg-primary/5">
                             Dashboard
@@ -73,17 +66,6 @@ export const Navbar = () => {
                           <Button variant="ghost" size="sm" className="text-muted hover:text-primary hover:bg-primary/5">
                             <ClipboardList className="h-4 w-4 mr-1.5" />
                             Requests
-                          </Button>
-                        </Link>
-                        <Link href="/chat">
-                          <Button variant="ghost" size="sm" className="text-muted hover:text-primary hover:bg-primary/5 relative">
-                            <MessageSquare className="h-4 w-4 mr-1.5" />
-                            Messages
-                            {unreadChatCount > 0 && (
-                              <span className="ml-1.5 px-1.5 py-0.2 rounded-full text-[10px] font-bold bg-primary text-white">
-                                {unreadChatCount > 99 ? '99+' : unreadChatCount}
-                              </span>
-                            )}
                           </Button>
                         </Link>
                         <Link href="/favorites">
@@ -97,7 +79,14 @@ export const Navbar = () => {
                         </Link>
                       </div>
                     )}
-                    <Link href="/chat" className="relative group p-2 text-muted hover:text-primary transition-colors" title="Messages">
+
+                    {/* Sole retained general-purpose Messages entry point: beside Search and before Bell */}
+                    <Link
+                      href="/chat"
+                      className="relative group p-2 text-muted hover:text-primary transition-colors rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
+                      title="Messages"
+                      aria-label="Messages"
+                    >
                       <MessageSquare className="h-5 w-5" />
                       {unreadChatCount > 0 && (
                         <span className="absolute -top-1 -right-1 flex items-center justify-center min-w-[1.25rem] h-5 px-1 bg-primary text-white text-[10px] font-bold rounded-full">
@@ -105,7 +94,14 @@ export const Navbar = () => {
                         </span>
                       )}
                     </Link>
-                    <Link href="/notifications" className="relative group p-2 text-muted hover:text-primary transition-colors" title="Notifications">
+
+                    {/* Notification Bell */}
+                    <Link
+                      href="/notifications"
+                      className="relative group p-2 text-muted hover:text-primary transition-colors rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
+                      title="Notifications"
+                      aria-label="Notifications"
+                    >
                       <Bell className="h-5 w-5" />
                       {unreadCount > 0 && (
                         <span className="absolute -top-1 -right-1 flex items-center justify-center min-w-[1.25rem] h-5 px-1 bg-red-500 text-white text-[10px] font-bold rounded-full">
@@ -113,17 +109,21 @@ export const Navbar = () => {
                         </span>
                       )}
                     </Link>
-                    <div className="flex items-center text-sm font-medium text-muted ml-2">
-                      <UserIcon className="h-4 w-4 mr-2" />
-                      {user.name}
+
+                    <div className="flex items-center text-sm font-medium text-muted ml-1 max-w-[140px] truncate" title={user.name}>
+                      <UserIcon className="h-4 w-4 mr-1.5 flex-shrink-0" />
+                      <span className="truncate">{user.name}</span>
                     </div>
-                    <Link href="/reports"><Button variant="ghost" size="sm" className="text-muted hover:text-foreground">Reports</Button></Link>
-                      <Button variant="ghost" size="sm" onClick={logout}>
+
+                    <Link href="/reports">
+                      <Button variant="ghost" size="sm" className="text-muted hover:text-foreground">Reports</Button>
+                    </Link>
+                    <Button variant="ghost" size="sm" onClick={logout}>
                       Logout
                     </Button>
                   </div>
                 ) : (
-                  <div className="flex items-center space-x-4 ml-4 pl-4 border-l border-border">
+                  <div className="flex items-center space-x-3 ml-4 pl-4 border-l border-border">
                     <Link href="/login">
                       <Button variant="ghost" size="sm">Log in</Button>
                     </Link>
@@ -136,11 +136,48 @@ export const Navbar = () => {
             )}
           </div>
 
-          {/* Mobile menu button */}
-          <div className="flex items-center sm:hidden">
+          {/* Mobile & Tablet controls - below lg */}
+          <div className="flex items-center space-x-1 lg:hidden">
+            {!loading && user && (
+              <>
+                {/* Sole retained Messages icon accessible on mobile & tablet */}
+                <Link
+                  href="/chat"
+                  onClick={closeMenu}
+                  className="relative p-2 text-muted hover:text-primary transition-colors rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
+                  title="Messages"
+                  aria-label="Messages"
+                >
+                  <MessageSquare className="h-5 w-5" />
+                  {unreadChatCount > 0 && (
+                    <span className="absolute -top-1 -right-1 flex items-center justify-center min-w-[1.125rem] h-4 px-1 bg-primary text-white text-[10px] font-bold rounded-full">
+                      {unreadChatCount > 99 ? '99+' : unreadChatCount}
+                    </span>
+                  )}
+                </Link>
+
+                {/* Notifications icon */}
+                <Link
+                  href="/notifications"
+                  onClick={closeMenu}
+                  className="relative p-2 text-muted hover:text-primary transition-colors rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
+                  title="Notifications"
+                  aria-label="Notifications"
+                >
+                  <Bell className="h-5 w-5" />
+                  {unreadCount > 0 && (
+                    <span className="absolute -top-1 -right-1 flex items-center justify-center min-w-[1.125rem] h-4 px-1 bg-red-500 text-white text-[10px] font-bold rounded-full">
+                      {unreadCount > 99 ? '99+' : unreadCount}
+                    </span>
+                  )}
+                </Link>
+              </>
+            )}
+
             <button
               onClick={toggleMenu}
               className="inline-flex items-center justify-center p-2 rounded-md text-muted hover:text-foreground hover:bg-muted/10 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-primary transition-colors"
+              aria-label="Toggle navigation menu"
             >
               <span className="sr-only">Open main menu</span>
               {isOpen ? <X className="block h-6 w-6" aria-hidden="true" /> : <Menu className="block h-6 w-6" aria-hidden="true" />}
@@ -149,106 +186,116 @@ export const Navbar = () => {
         </div>
       </div>
 
-      {/* Mobile Nav */}
+      {/* Mobile & Tablet Dropdown Navigation */}
       {isOpen && (
-        <div className="sm:hidden border-t border-border bg-card">
+        <div className="lg:hidden border-t border-border bg-card shadow-lg animate-in fade-in slide-in-from-top-1 duration-150">
           <div className="pt-2 pb-3 space-y-1">
-            <Link href="/properties" className="block px-4 py-2 text-base font-medium text-foreground hover:bg-muted/10 hover:text-primary">
+            <Link 
+              href="/properties" 
+              onClick={closeMenu}
+              className="block px-4 py-2 text-base font-medium text-foreground hover:bg-muted/10 hover:text-primary"
+            >
               Browse Properties
             </Link>
           </div>
           
           {!loading && (
-            <div className="pt-4 pb-3 border-t border-border">
+            <div className="pt-3 pb-3 border-t border-border">
               {user ? (
                 <>
                   <div className="px-4 flex items-center justify-between mb-4">
-                    <div className="flex items-center">
-                      <UserIcon className="h-5 w-5 mr-3 text-muted" />
-                      <div>
-                        <div className="text-base font-medium text-foreground">{user.name}</div>
-                        <div className="text-sm font-medium text-muted">{user.email}</div>
+                    <div className="flex items-center min-w-0 mr-2">
+                      <UserIcon className="h-5 w-5 mr-3 text-muted flex-shrink-0" />
+                      <div className="min-w-0">
+                        <div className="text-base font-semibold text-foreground truncate">{user.name}</div>
+                        <div className="text-xs text-muted truncate">{user.email}</div>
                       </div>
                     </div>
-                    <div className="flex items-center gap-1">
-                      <Link href="/chat" className="relative p-2 text-muted hover:text-primary" title="Messages">
-                        <MessageSquare className="h-6 w-6" />
-                        {unreadChatCount > 0 && (
-                          <span className="absolute -top-1 -right-1 flex items-center justify-center min-w-[1.25rem] h-5 px-1 bg-primary text-white text-[10px] font-bold rounded-full border border-card">
-                            {unreadChatCount > 99 ? '99+' : unreadChatCount}
-                          </span>
-                        )}
-                      </Link>
-                      <Link href="/notifications" className="relative p-2 text-muted hover:text-primary" title="Notifications">
-                        <Bell className="h-6 w-6" />
-                        {unreadCount > 0 && (
-                          <span className="absolute -top-1 -right-1 flex items-center justify-center min-w-[1.25rem] h-5 px-1 bg-red-500 text-white text-[10px] font-bold rounded-full border border-card">
-                            {unreadCount > 99 ? '99+' : unreadCount}
-                          </span>
-                        )}
-                      </Link>
-                    </div>
                   </div>
+
                   <div className="space-y-1">
                     {user.role === 'OWNER' && (
                       <>
-                        <Link href="/owner" className="block px-4 py-2 text-base font-medium text-foreground hover:bg-muted/10">
+                        <Link 
+                          href="/owner" 
+                          onClick={closeMenu}
+                          className="block px-4 py-2.5 text-base font-medium text-foreground hover:bg-muted/10"
+                        >
                           My Properties
                         </Link>
-                        <Link href="/owner/requests" className="block px-4 py-2 text-base font-medium text-foreground hover:bg-muted/10">
+                        <Link 
+                          href="/owner/requests" 
+                          onClick={closeMenu}
+                          className="block px-4 py-2.5 text-base font-medium text-foreground hover:bg-muted/10"
+                        >
                           <div className="flex items-center">
-                            <ClipboardList className="h-4 w-4 mr-2 text-primary" />
+                            <ClipboardList className="h-4 w-4 mr-2.5 text-primary" />
                             Rental Requests
-                          </div>
-                        </Link>
-                        <Link href="/chat" className="block px-4 py-2 text-base font-medium text-foreground hover:bg-muted/10">
-                          <div className="flex items-center">
-                            <MessageSquare className="h-4 w-4 mr-2 text-primary" />
-                            Messages
                           </div>
                         </Link>
                       </>
                     )}
                     {user.role === 'TENANT' && (
                       <>
-                        <Link href="/tenant" className="block px-4 py-2 text-base font-medium text-foreground hover:bg-muted/10">
+                        <Link 
+                          href="/tenant" 
+                          onClick={closeMenu}
+                          className="block px-4 py-2.5 text-base font-medium text-foreground hover:bg-muted/10"
+                        >
                           Tenant Dashboard
                         </Link>
-                        <Link href="/rental-requests" className="block px-4 py-2 text-base font-medium text-foreground hover:bg-muted/10">
+                        <Link 
+                          href="/rental-requests" 
+                          onClick={closeMenu}
+                          className="block px-4 py-2.5 text-base font-medium text-foreground hover:bg-muted/10"
+                        >
                           <div className="flex items-center">
-                            <ClipboardList className="h-4 w-4 mr-2 text-primary" />
+                            <ClipboardList className="h-4 w-4 mr-2.5 text-primary" />
                             My Requests
                           </div>
                         </Link>
-                        <Link href="/chat" className="block px-4 py-2 text-base font-medium text-foreground hover:bg-muted/10">
+                        <Link 
+                          href="/favorites" 
+                          onClick={closeMenu}
+                          className="block px-4 py-2.5 text-base font-medium text-foreground hover:bg-muted/10"
+                        >
                           <div className="flex items-center">
-                            <MessageSquare className="h-4 w-4 mr-2 text-primary" />
-                            Messages
-                          </div>
-                        </Link>
-                        <Link href="/favorites" className="block px-4 py-2 text-base font-medium text-foreground hover:bg-muted/10">
-                          <div className="flex items-center">
-                            <Heart className="h-4 w-4 mr-2 text-red-500" />
+                            <Heart className="h-4 w-4 mr-2.5 text-red-500" />
                             Saved Properties
                           </div>
                         </Link>
                       </>
                     )}
+
+                    <Link 
+                      href="/reports" 
+                      onClick={closeMenu}
+                      className="block px-4 py-2.5 text-base font-medium text-foreground hover:bg-muted/10"
+                    >
+                      <div className="flex items-center">
+                        <ShieldAlert className="h-4 w-4 mr-2.5 text-muted" />
+                        Reports
+                      </div>
+                    </Link>
+
                     <button 
-                      onClick={logout}
-                      className="block w-full text-left px-4 py-2 text-base font-medium text-danger hover:bg-muted/10"
+                      onClick={() => {
+                        closeMenu();
+                        logout();
+                      }}
+                      className="block w-full text-left px-4 py-2.5 text-base font-medium text-danger hover:bg-muted/10"
                     >
                       Logout
                     </button>
                   </div>
                 </>
               ) : (
-                <div className="space-y-1 px-4 flex flex-col gap-2">
-                  <Link href="/login">
-                    <Button variant="outline" fullWidth>Log in</Button>
+                <div className="space-y-2 px-4 py-2 flex flex-col">
+                  <Link href="/login" onClick={closeMenu}>
+                    <Button variant="outline" className="w-full">Log in</Button>
                   </Link>
-                  <Link href="/register">
-                    <Button fullWidth>Sign up</Button>
+                  <Link href="/register" onClick={closeMenu}>
+                    <Button className="w-full">Sign up</Button>
                   </Link>
                 </div>
               )}

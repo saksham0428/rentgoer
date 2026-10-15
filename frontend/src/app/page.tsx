@@ -21,23 +21,23 @@ export default async function HomePage() {
       {/* Hero Section */}
       <section className="bg-card pt-16 pb-24 border-b border-border">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-          <h1 className="text-5xl md:text-6xl font-extrabold text-foreground tracking-tight mb-6">
+          <h1 className="text-3xl sm:text-5xl md:text-6xl font-extrabold text-foreground tracking-tight mb-6 leading-tight">
             Find your place.<br />
             <span className="text-primary">Skip the broker.</span>
           </h1>
-          <p className="mt-4 text-xl text-muted max-w-2xl mx-auto mb-10">
+          <p className="mt-4 text-base sm:text-xl text-muted max-w-2xl mx-auto mb-10 px-2 sm:px-0">
             The modern direct rental marketplace connecting tenants and property owners. 
             Zero hidden fees, pure transparency.
           </p>
-          <div className="flex flex-col sm:flex-row justify-center items-center gap-4">
+          <div className="flex flex-col sm:flex-row justify-center items-center gap-4 w-full max-w-xs sm:max-w-none mx-auto">
             {user?.role === 'OWNER' ? (
-              <Link href="/owner">
+              <Link href="/owner" className="w-full sm:w-auto">
                 <Button size="lg" className="w-full sm:w-auto font-semibold text-lg px-8 py-4">
                   Owner Dashboard
                 </Button>
               </Link>
             ) : (
-              <Link href="/properties">
+              <Link href="/properties" className="w-full sm:w-auto">
                 <Button size="lg" className="w-full sm:w-auto font-semibold text-lg px-8 py-4">
                   {user?.role === 'TENANT' ? 'Browse Properties' : 'Find a Property'}
                 </Button>
@@ -45,7 +45,7 @@ export default async function HomePage() {
             )}
 
             {!user && (
-              <Link href="/register?role=OWNER">
+              <Link href="/register?role=OWNER" className="w-full sm:w-auto">
                 <Button variant="outline" size="lg" className="w-full sm:w-auto font-semibold text-lg px-8 py-4 bg-transparent hover:bg-muted/5 text-foreground border-border">
                   List Your Property
                 </Button>
