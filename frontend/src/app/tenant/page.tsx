@@ -9,7 +9,7 @@ import { useAuth } from '@/context/AuthContext';
 import { api } from '@/lib/api';
 import { PropertyCard } from '@/components/ui/PropertyCard';
 import { RentalRequestCard } from '@/components/property/RentalRequestCard';
-import { Loader2, Heart, ClipboardList, Home, Clock, CheckCircle2, Search } from 'lucide-react';
+import { Loader2, Heart, ClipboardList, Home, Clock, CheckCircle2, Search, MessageSquare } from 'lucide-react';
 
 export default function TenantDashboard() {
   const { user, loading: authLoading } = useAuth();
@@ -93,14 +93,22 @@ export default function TenantDashboard() {
           <p className="text-muted mt-1">Find your next place to call home.</p>
         </div>
         
-        {/* 7. Profile Summary (Compact) */}
-        <div className="flex items-center gap-3 bg-muted/10 px-4 py-3 rounded-lg border border-border/50">
-          <div className="h-10 w-10 bg-primary/10 text-primary rounded-full flex items-center justify-center font-bold">
-            {user.name.charAt(0).toUpperCase()}
-          </div>
-          <div>
-            <p className="font-semibold text-foreground text-sm leading-tight">{user.name}</p>
-            <p className="text-xs text-muted leading-tight">{user.email}</p>
+        <div className="flex flex-wrap items-center gap-3">
+          <Link href="/chat">
+            <Button variant="outline" className="gap-2">
+              <MessageSquare className="h-4 w-4" />
+              Messages
+            </Button>
+          </Link>
+          {/* Profile Summary (Compact) */}
+          <div className="flex items-center gap-3 bg-muted/10 px-4 py-3 rounded-lg border border-border/50">
+            <div className="h-10 w-10 bg-primary/10 text-primary rounded-full flex items-center justify-center font-bold">
+              {user.name.charAt(0).toUpperCase()}
+            </div>
+            <div>
+              <p className="font-semibold text-foreground text-sm leading-tight">{user.name}</p>
+              <p className="text-xs text-muted leading-tight">{user.email}</p>
+            </div>
           </div>
         </div>
       </div>
@@ -137,13 +145,20 @@ export default function TenantDashboard() {
           <p className="text-3xl font-bold text-foreground">{pendingRequests}</p>
         </div>
 
-        <div className="bg-card border border-border rounded-xl p-5 shadow-sm flex flex-col">
-          <div className="flex items-center gap-2 text-muted mb-2">
-            <CheckCircle2 className="h-4 w-4 text-success" />
-            <h3 className="text-sm font-semibold">Accepted</h3>
+        <Link href="/chat" className="bg-card border border-border rounded-xl p-5 shadow-sm flex flex-col hover:border-primary/50 transition-colors group">
+          <div className="flex items-center justify-between text-muted mb-2">
+            <div className="flex items-center gap-2">
+              <CheckCircle2 className="h-4 w-4 text-success" />
+              <h3 className="text-sm font-semibold group-hover:text-primary transition-colors">Accepted</h3>
+            </div>
+            {acceptedRequests > 0 && (
+              <span className="text-[10px] font-semibold text-primary bg-primary/10 px-2 py-0.5 rounded-full">
+                Chat Available
+              </span>
+            )}
           </div>
           <p className="text-3xl font-bold text-foreground">{acceptedRequests}</p>
-        </div>
+        </Link>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 items-start">

@@ -4,7 +4,7 @@ import React, { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/Button';
-import { ClipboardList, Search, Loader2 } from 'lucide-react';
+import { ClipboardList, Search, Loader2, MessageSquare } from 'lucide-react';
 import { api } from '@/lib/api';
 import { RentalRequestCard } from '@/components/property/RentalRequestCard';
 import { useAuth } from '@/context/AuthContext';
@@ -79,12 +79,20 @@ export default function RentalRequestsPage() {
 
   return (
     <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-10 w-full flex-grow flex flex-col">
-      <div className="mb-8 border-b border-border pb-4">
-        <h1 className="text-3xl font-bold text-foreground tracking-tight flex items-center gap-3">
-          <ClipboardList className="h-8 w-8 text-primary" />
-          My Rental Requests
-        </h1>
-        <p className="text-muted mt-2">Track the status of properties you have applied for.</p>
+      <div className="mb-8 border-b border-border pb-4 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div>
+          <h1 className="text-3xl font-bold text-foreground tracking-tight flex items-center gap-3">
+            <ClipboardList className="h-8 w-8 text-primary" />
+            My Rental Requests
+          </h1>
+          <p className="text-muted mt-2">Track the status of properties you have applied for.</p>
+        </div>
+        <Link href="/chat">
+          <Button variant="outline" className="gap-2">
+            <MessageSquare className="h-4 w-4" />
+            Messages
+          </Button>
+        </Link>
       </div>
 
       {requests.length === 0 ? (

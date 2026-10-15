@@ -3,14 +3,16 @@
 import React, { useState } from 'react';
 import Link from 'next/link';
 import { Button } from '@/components/ui/Button';
-import { Menu, X, User as UserIcon, Heart, ClipboardList, Bell } from 'lucide-react';
+import { Menu, X, User as UserIcon, Heart, ClipboardList, Bell, MessageSquare } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
 import { useNotifications } from '@/context/NotificationContext';
+import { useUnreadChatCount } from '@/hooks/useUnreadChatCount';
 
 export const Navbar = () => {
   const [isOpen, setIsOpen] = useState(false);
   const { user, loading, logout } = useAuth();
   const { unreadCount } = useNotifications();
+  const { unreadChatCount } = useUnreadChatCount();
 
   const toggleMenu = () => setIsOpen(!isOpen);
 
@@ -47,6 +49,17 @@ export const Navbar = () => {
                             Requests
                           </Button>
                         </Link>
+                        <Link href="/chat">
+                          <Button variant="ghost" size="sm" className="text-muted hover:text-primary hover:bg-primary/5 relative">
+                            <MessageSquare className="h-4 w-4 mr-1.5" />
+                            Messages
+                            {unreadChatCount > 0 && (
+                              <span className="ml-1.5 px-1.5 py-0.2 rounded-full text-[10px] font-bold bg-primary text-white">
+                                {unreadChatCount > 99 ? '99+' : unreadChatCount}
+                              </span>
+                            )}
+                          </Button>
+                        </Link>
                       </div>
                     )}
                     {user.role === 'TENANT' && (
@@ -62,6 +75,17 @@ export const Navbar = () => {
                             Requests
                           </Button>
                         </Link>
+                        <Link href="/chat">
+                          <Button variant="ghost" size="sm" className="text-muted hover:text-primary hover:bg-primary/5 relative">
+                            <MessageSquare className="h-4 w-4 mr-1.5" />
+                            Messages
+                            {unreadChatCount > 0 && (
+                              <span className="ml-1.5 px-1.5 py-0.2 rounded-full text-[10px] font-bold bg-primary text-white">
+                                {unreadChatCount > 99 ? '99+' : unreadChatCount}
+                              </span>
+                            )}
+                          </Button>
+                        </Link>
                         <Link href="/favorites">
                           <Button variant="ghost" size="sm" className="text-muted hover:text-red-500 hover:bg-red-50">
                             <Heart className="h-4 w-4 mr-1.5" />
@@ -73,7 +97,15 @@ export const Navbar = () => {
                         </Link>
                       </div>
                     )}
-                    <Link href="/notifications" className="relative group p-2 text-muted hover:text-primary transition-colors">
+                    <Link href="/chat" className="relative group p-2 text-muted hover:text-primary transition-colors" title="Messages">
+                      <MessageSquare className="h-5 w-5" />
+                      {unreadChatCount > 0 && (
+                        <span className="absolute -top-1 -right-1 flex items-center justify-center min-w-[1.25rem] h-5 px-1 bg-primary text-white text-[10px] font-bold rounded-full">
+                          {unreadChatCount > 99 ? '99+' : unreadChatCount}
+                        </span>
+                      )}
+                    </Link>
+                    <Link href="/notifications" className="relative group p-2 text-muted hover:text-primary transition-colors" title="Notifications">
                       <Bell className="h-5 w-5" />
                       {unreadCount > 0 && (
                         <span className="absolute -top-1 -right-1 flex items-center justify-center min-w-[1.25rem] h-5 px-1 bg-red-500 text-white text-[10px] font-bold rounded-full">
@@ -138,14 +170,24 @@ export const Navbar = () => {
                         <div className="text-sm font-medium text-muted">{user.email}</div>
                       </div>
                     </div>
-                    <Link href="/notifications" className="relative p-2 text-muted hover:text-primary">
-                      <Bell className="h-6 w-6" />
-                      {unreadCount > 0 && (
-                        <span className="absolute -top-1 -right-1 flex items-center justify-center min-w-[1.25rem] h-5 px-1 bg-red-500 text-white text-[10px] font-bold rounded-full border border-card">
-                          {unreadCount > 99 ? '99+' : unreadCount}
-                        </span>
-                      )}
-                    </Link>
+                    <div className="flex items-center gap-1">
+                      <Link href="/chat" className="relative p-2 text-muted hover:text-primary" title="Messages">
+                        <MessageSquare className="h-6 w-6" />
+                        {unreadChatCount > 0 && (
+                          <span className="absolute -top-1 -right-1 flex items-center justify-center min-w-[1.25rem] h-5 px-1 bg-primary text-white text-[10px] font-bold rounded-full border border-card">
+                            {unreadChatCount > 99 ? '99+' : unreadChatCount}
+                          </span>
+                        )}
+                      </Link>
+                      <Link href="/notifications" className="relative p-2 text-muted hover:text-primary" title="Notifications">
+                        <Bell className="h-6 w-6" />
+                        {unreadCount > 0 && (
+                          <span className="absolute -top-1 -right-1 flex items-center justify-center min-w-[1.25rem] h-5 px-1 bg-red-500 text-white text-[10px] font-bold rounded-full border border-card">
+                            {unreadCount > 99 ? '99+' : unreadCount}
+                          </span>
+                        )}
+                      </Link>
+                    </div>
                   </div>
                   <div className="space-y-1">
                     {user.role === 'OWNER' && (
@@ -159,6 +201,12 @@ export const Navbar = () => {
                             Rental Requests
                           </div>
                         </Link>
+                        <Link href="/chat" className="block px-4 py-2 text-base font-medium text-foreground hover:bg-muted/10">
+                          <div className="flex items-center">
+                            <MessageSquare className="h-4 w-4 mr-2 text-primary" />
+                            Messages
+                          </div>
+                        </Link>
                       </>
                     )}
                     {user.role === 'TENANT' && (
@@ -170,6 +218,12 @@ export const Navbar = () => {
                           <div className="flex items-center">
                             <ClipboardList className="h-4 w-4 mr-2 text-primary" />
                             My Requests
+                          </div>
+                        </Link>
+                        <Link href="/chat" className="block px-4 py-2 text-base font-medium text-foreground hover:bg-muted/10">
+                          <div className="flex items-center">
+                            <MessageSquare className="h-4 w-4 mr-2 text-primary" />
+                            Messages
                           </div>
                         </Link>
                         <Link href="/favorites" className="block px-4 py-2 text-base font-medium text-foreground hover:bg-muted/10">

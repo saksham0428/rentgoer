@@ -5,7 +5,7 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/Button';
 import { PropertyCard } from '@/components/ui/PropertyCard';
-import { Plus, Edit, Loader2, ShieldCheck, ShieldAlert, ShieldEllipsis, ShieldX } from 'lucide-react';
+import { Plus, Edit, Loader2, ShieldCheck, ShieldAlert, ShieldEllipsis, ShieldX, MessageSquare, ClipboardList } from 'lucide-react';
 import { api } from '@/lib/api';
 import { useAuth } from '@/context/AuthContext';
 
@@ -128,7 +128,19 @@ export default function OwnerDashboard() {
           <h1 className="text-3xl font-bold text-foreground tracking-tight">Owner Dashboard</h1>
           <p className="text-muted mt-2">Manage your property listings and availability.</p>
         </div>
-        <div className="flex items-center gap-4">
+        <div className="flex flex-wrap items-center gap-3">
+          <Link href="/owner/requests">
+            <Button variant="outline" className="flex items-center gap-2">
+              <ClipboardList className="h-4 w-4" />
+              Requests
+            </Button>
+          </Link>
+          <Link href="/chat">
+            <Button variant="outline" className="flex items-center gap-2">
+              <MessageSquare className="h-4 w-4" />
+              Messages
+            </Button>
+          </Link>
           <Link href="/owner/properties/new">
             <Button className="flex items-center gap-2">
               <Plus className="h-4 w-4" />

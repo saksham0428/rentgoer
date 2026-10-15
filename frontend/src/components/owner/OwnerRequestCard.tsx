@@ -7,6 +7,7 @@ import Link from 'next/link';
 import { Button } from '@/components/ui/Button';
 import { MapPin, Calendar, CheckCircle2, XCircle, Phone, Mail, User, Loader2 } from 'lucide-react';
 import { api } from '@/lib/api';
+import { RentalRequestChatButton } from '@/components/chat/RentalRequestChatButton';
 
 interface OwnerRequestCardProps {
   request: any;
@@ -167,23 +168,36 @@ export const OwnerRequestCard = ({ request, onUpdate }: OwnerRequestCardProps) =
                 </Button>
               </>
             ) : request.status === 'ACCEPTED' ? (
-              <>
-                <span className="inline-flex items-center text-sm font-semibold text-success mr-2">
+              <div className="flex flex-wrap items-center gap-2">
+                <span className="inline-flex items-center text-sm font-semibold text-success mr-1">
                   <CheckCircle2 className="h-4 w-4 mr-1" /> Request Accepted
                 </span>
+                <RentalRequestChatButton
+                  requestId={request.id}
+                  conversationId={request.conversation?.id}
+                  label="Chat with Tenant"
+                />
                 <Button 
                   size="sm"
+                  variant="outline"
                   onClick={handleComplete}
                   disabled={loadingAction !== null}
-                  className="bg-primary text-primary-foreground hover:bg-primary/90"
                 >
                   {loadingAction === 'complete' ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Mark Completed'}
                 </Button>
-              </>
+              </div>
             ) : request.status === 'COMPLETED' ? (
-              <span className="inline-flex items-center text-sm font-semibold text-primary">
-                <CheckCircle2 className="h-4 w-4 mr-1" /> Rental Completed
-              </span>
+              <div className="flex flex-wrap items-center gap-2">
+                <span className="inline-flex items-center text-sm font-semibold text-primary mr-1">
+                  <CheckCircle2 className="h-4 w-4 mr-1" /> Rental Completed
+                </span>
+                <RentalRequestChatButton
+                  requestId={request.id}
+                  conversationId={request.conversation?.id}
+                  label="Chat History"
+                  variant="outline"
+                />
+              </div>
             ) : request.status === 'REJECTED' ? (
               <span className="inline-flex items-center text-sm font-semibold text-danger">
                 <XCircle className="h-4 w-4 mr-1" /> Request Rejected

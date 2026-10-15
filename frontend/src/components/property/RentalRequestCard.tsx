@@ -8,6 +8,7 @@ import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/Button';
 import { MapPin, Loader2, Calendar } from 'lucide-react';
 import { api } from '@/lib/api';
+import { RentalRequestChatButton } from '@/components/chat/RentalRequestChatButton';
 
 interface RentalRequestCardProps {
   request: any;
@@ -104,12 +105,27 @@ export const RentalRequestCard = ({ request }: RentalRequestCardProps) => {
 
             <div className="flex items-center gap-3">
               {error && <span className="text-xs text-danger">{error}</span>}
+              {request.status === 'ACCEPTED' && (
+                <RentalRequestChatButton
+                  requestId={request.id}
+                  conversationId={request.conversation?.id}
+                  label="Chat with Owner"
+                />
+              )}
               {request.status === 'COMPLETED' && (
-                <Link href={`/properties/${request.property.id}`}>
-                  <Button variant="outline" size="sm" className="border-primary text-primary hover:bg-primary/5">
-                    Write/View Review
-                  </Button>
-                </Link>
+                <div className="flex items-center gap-2">
+                  <RentalRequestChatButton
+                    requestId={request.id}
+                    conversationId={request.conversation?.id}
+                    label="Chat History"
+                    variant="outline"
+                  />
+                  <Link href={`/properties/${request.property.id}`}>
+                    <Button variant="outline" size="sm" className="border-primary text-primary hover:bg-primary/5">
+                      Write/View Review
+                    </Button>
+                  </Link>
+                </div>
               )}
               {request.status === 'PENDING' && (
                 <Button 

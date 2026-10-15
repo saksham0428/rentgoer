@@ -40,6 +40,16 @@ export const getConversations = async (req: Request, res: Response): Promise<voi
         messages: {
           orderBy: { createdAt: 'desc' },
           take: 1
+        },
+        _count: {
+          select: {
+            messages: {
+              where: {
+                senderId: { not: userId },
+                readAt: null
+              }
+            }
+          }
         }
       },
       orderBy: { updatedAt: 'desc' }
@@ -48,6 +58,91 @@ export const getConversations = async (req: Request, res: Response): Promise<voi
     res.status(200).json({ success: true, data: conversations });
   } catch (error) {
     console.error('Error fetching conversations:', error);
+    res.status(500).json({ success: false, message: 'Internal server error' });
+  }
+};
+
+
+export const getConversationById = async (req: Request, res: Response): Promise<void> => {
+  try {
+    const userId = req.user?.id;
+    if (!userId) {
+      res.status(401).json({ success: false, message: 'Unauthenticated' });
+      return;
+    }
+
+    const conversationId = req.params.id as string;
+
+    const conversation = await prisma.conversation.findUnique({
+      where: { id: conversationId },
+      include: {
+        property: {
+          select: {
+            id: true,
+            title: true,
+            locality: true,
+            city: true,
+            rent: true,
+            images: {
+              take: 1,
+              select: { url: true }
+            }
+          }
+        },
+        tenant: {
+          select: { id: true, name: true, email: true, phone: true }
+        },
+        owner: {
+          select: { id: true, name: true, email: true, phone: true }
+        },
+        rentalRequest: {
+          select: { id: true, status: true, message: true, createdAt: true }
+        }
+      }
+    });
+
+    if (!conversation) {
+      res.status(404).json({ success: false, message: 'Conversation not found' });
+      return;
+    }
+
+    if (conversation.tenantId !== userId && conversation.ownerId !== userId) {
+      res.status(403).json({ success: false, message: 'Forbidden' });
+      return;
+    }
+
+    res.status(200).json({ success: true, data: conversation });
+  } catch (error) {
+    console.error('Error fetching conversation:', error);
+    res.status(500).json({ success: false, message: 'Internal server error' });
+  }
+};
+
+
+export const getUnreadMessagesCount = async (req: Request, res: Response): Promise<void> => {
+  try {
+    const userId = req.user?.id;
+    if (!userId) {
+      res.status(401).json({ success: false, message: 'Unauthenticated' });
+      return;
+    }
+
+    const count = await prisma.message.count({
+      where: {
+        conversation: {
+          OR: [
+            { tenantId: userId },
+            { ownerId: userId }
+          ]
+        },
+        senderId: { not: userId },
+        readAt: null
+      }
+    });
+
+    res.status(200).json({ success: true, count });
+  } catch (error) {
+    console.error('Error fetching unread messages count:', error);
     res.status(500).json({ success: false, message: 'Internal server error' });
   }
 };
@@ -88,6 +183,32 @@ export const getMessages = async (req: Request, res: Response): Promise<void> =>
       orderBy: { createdAt: 'desc' },
       take: limit,
     });
+
+    
+    // Mark unread messages as read asynchronously
+    prisma.message.updateMany({
+      where: {
+        conversationId,
+        senderId: { not: userId },
+        readAt: null
+      },
+      data: {
+        readAt: new Date()
+      }
+    }).catch(err => console.error('Error marking messages as read:', err));
+
+    prisma.notification.updateMany({
+      where: {
+        userId,
+        type: 'CHAT_MESSAGE',
+        referenceId: conversationId,
+        isRead: false
+      },
+      data: {
+        isRead: true,
+        readAt: new Date()
+      }
+    }).catch(err => console.error('Error marking chat notifications as read:', err));
 
     messages.reverse();
 
@@ -135,7 +256,7 @@ export const sendMessage = async (req: Request, res: Response): Promise<void> =>
       return;
     }
 
-    if (conversation.rentalRequest.status !== 'ACCEPTED') {
+    if (conversation.rentalRequest.status !== 'ACCEPTED' && conversation.rentalRequest.status !== 'COMPLETED') {
       res.status(409).json({ success: false, message: 'Chat is only available for ACCEPTED requests' });
       return;
     }
@@ -206,7 +327,7 @@ export const createConversation = async (req: Request, res: Response): Promise<v
       return;
     }
 
-    if (rentalRequest.status !== 'ACCEPTED') {
+    if (rentalRequest.status !== 'ACCEPTED' && rentalRequest.status !== 'COMPLETED') {
       res.status(409).json({ success: false, message: 'Chat is only available for ACCEPTED requests' });
       return;
     }

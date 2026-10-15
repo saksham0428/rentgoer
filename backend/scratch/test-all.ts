@@ -11,6 +11,7 @@ const tests = [
   'test-owner-rental-requests.ts',
   'test-issue1-regression.ts',
   'test-chat.ts',
+  'test-chat-integration.ts',
   'test-notifications.ts',
   'test-reviews.ts',
   'test-reports.ts',

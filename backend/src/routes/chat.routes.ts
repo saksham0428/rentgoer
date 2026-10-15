@@ -1,6 +1,8 @@
 import { Router } from 'express';
 import { 
   getConversations,
+  getUnreadMessagesCount,
+  getConversationById,
   getMessages,
   sendMessage,
   createConversation,
@@ -12,6 +14,8 @@ const router = Router();
 
 router.get('/', authMiddleware, getConversations);
 router.post('/', authMiddleware, createConversation);
+router.get('/unread-count', authMiddleware, getUnreadMessagesCount);
+router.get('/:id', authMiddleware, getConversationById);
 router.get('/:id/messages', authMiddleware, getMessages);
 router.post('/:id/messages', authMiddleware, sendMessage);
 router.get('/:id/realtime', authMiddleware, streamMessages);

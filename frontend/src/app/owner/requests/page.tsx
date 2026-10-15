@@ -10,7 +10,7 @@ import { Button } from '@/components/ui/Button';
 import { useAuth } from '@/context/AuthContext';
 import { api } from '@/lib/api';
 import { OwnerRequestCard } from '@/components/owner/OwnerRequestCard';
-import { ClipboardList, Loader2, Home, CheckCircle2, Clock, XCircle } from 'lucide-react';
+import { ClipboardList, Loader2, Home, CheckCircle2, Clock, XCircle, MessageSquare } from 'lucide-react';
 
 export default function OwnerRequestsPage() {
   const { user, loading: authLoading } = useAuth();
@@ -83,11 +83,18 @@ export default function OwnerRequestsPage() {
           </h1>
           <p className="text-muted mt-2">Manage incoming rental applications for your properties.</p>
         </div>
-        <Link href="/owner">
-          <Button variant="outline" className="gap-2">
-            <Home className="h-4 w-4" /> My Properties
-          </Button>
-        </Link>
+        <div className="flex items-center gap-3">
+          <Link href="/chat">
+            <Button variant="outline" className="gap-2">
+              <MessageSquare className="h-4 w-4" /> Messages
+            </Button>
+          </Link>
+          <Link href="/owner">
+            <Button variant="outline" className="gap-2">
+              <Home className="h-4 w-4" /> My Properties
+            </Button>
+          </Link>
+        </div>
       </div>
 
       {error && (

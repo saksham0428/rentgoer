@@ -85,6 +85,11 @@ export const getMyRentalRequests = async (req: Request, res: Response): Promise<
       where: { tenantId },
       orderBy: { createdAt: 'desc' },
       include: {
+        conversation: {
+          select: {
+            id: true
+          }
+        },
         property: {
           select: {
             id: true,
@@ -166,6 +171,11 @@ export const getOwnerRequests = async (req: Request, res: Response): Promise<voi
         }
       },
       include: {
+        conversation: {
+          select: {
+            id: true
+          }
+        },
         property: true,
         tenant: {
           select: {
@@ -256,11 +266,6 @@ export const acceptRequest = async (req: Request, res: Response): Promise<void> 
         throw new Error('CONFLICT_STATUS');
       }
 
-      const acceptedRequest = await tx.rentalRequest.findUnique({
-        where: { id: requestId },
-        include: { property: true }
-      });
-
       // 3. Mark all other PENDING requests for this property as REJECTED
       const otherRequests = await tx.rentalRequest.findMany({
         where: {
@@ -291,6 +296,11 @@ export const acceptRequest = async (req: Request, res: Response): Promise<void> 
           tenantId: request.tenantId,
           ownerId: request.property.ownerId
         }
+      });
+
+      const acceptedRequest = await tx.rentalRequest.findUnique({
+        where: { id: requestId },
+        include: { property: true, conversation: true }
       });
 
       return { acceptedRequest, request, otherRequests };
