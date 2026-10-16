@@ -1,6 +1,6 @@
 import { Request, Response } from 'express';
 import { prisma } from '../lib/prisma';
-import { chatEventEmitter } from '../lib/realtime';
+import { chatEventEmitter, broadcastMessage } from '../lib/realtime';
 import { sseTracker } from '../lib/sse-tracker';
 
 export const getConversations = async (req: Request, res: Response): Promise<void> => {
@@ -178,8 +178,17 @@ export const getMessages = async (req: Request, res: Response): Promise<void> =>
       return;
     }
 
+    const after = req.query.after as string | undefined;
+    const whereClause: any = { conversationId };
+    if (after) {
+      const parsedDate = new Date(after);
+      if (!isNaN(parsedDate.getTime())) {
+        whereClause.createdAt = { gt: parsedDate };
+      }
+    }
+
     const messages = await prisma.message.findMany({
-      where: { conversationId },
+      where: whereClause,
       orderBy: { createdAt: 'desc' },
       take: limit,
     });
@@ -275,8 +284,8 @@ export const sendMessage = async (req: Request, res: Response): Promise<void> =>
       data: { updatedAt: new Date() }
     });
 
-    // Broadcast via Supabase Realtime
-    import('../lib/realtime').then(m => m.broadcastMessage(message)).catch(console.error);
+    // Broadcast via Realtime SSE event emitter
+    broadcastMessage(message);
 
     // Notify other user
     const recipientId = conversation.tenantId === userId ? conversation.ownerId : conversation.tenantId;
@@ -385,9 +394,18 @@ export const streamMessages = async (req: Request, res: Response): Promise<void>
 
     // Set up SSE headers
     res.setHeader('Content-Type', 'text/event-stream');
-    res.setHeader('Cache-Control', 'no-cache');
+    res.setHeader('Cache-Control', 'no-cache, no-transform');
     res.setHeader('Connection', 'keep-alive');
+    res.setHeader('X-Accel-Buffering', 'no');
     res.flushHeaders();
+
+    // Initial connection confirmation
+    res.write(': connected\n\n');
+
+    // Keepalive ping every 20 seconds to prevent proxy / Render connection timeouts
+    const keepAliveInterval = setInterval(() => {
+      res.write(': ping\n\n');
+    }, 20000);
 
     const eventName = `message:${conversationId}`;
 
@@ -398,6 +416,7 @@ export const streamMessages = async (req: Request, res: Response): Promise<void>
     chatEventEmitter.on(eventName, onMessage);
 
     req.on('close', () => {
+      clearInterval(keepAliveInterval);
       chatEventEmitter.off(eventName, onMessage);
       sseTracker.removeChatConnection(userId);
     });

@@ -44,7 +44,7 @@ export default function ChatListPage() {
   const isTenant = user?.role === 'TENANT';
 
   return (
-    <div className="max-w-7xl mx-auto h-[calc(100vh-64px)] w-full flex overflow-hidden sm:p-4 md:p-6">
+    <div className="max-w-7xl mx-auto h-[calc(100dvh-4rem)] w-full flex overflow-hidden sm:p-4 md:p-6">
       <div className="w-full h-full bg-card sm:border border-border sm:rounded-2xl shadow-sm flex overflow-hidden">
         
         {/* Left Panel: Conversation List (Full width on mobile, fixed width on desktop) */}

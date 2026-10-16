@@ -2,8 +2,16 @@
 
 import React from 'react';
 import Link from 'next/link';
+import { usePathname } from 'next/navigation';
 
 export const Footer = () => {
+  const pathname = usePathname();
+
+  // Do not render marketing footer on chat pages to preserve fixed full-height app viewport
+  if (pathname?.startsWith('/chat')) {
+    return null;
+  }
+
   return (
     <footer className="bg-card border-t border-border mt-auto">
       <div className="max-w-7xl mx-auto py-12 px-4 sm:px-6 lg:px-8">

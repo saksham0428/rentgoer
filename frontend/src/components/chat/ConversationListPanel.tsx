@@ -190,6 +190,7 @@ export const ConversationListPanel: React.FC<ConversationListPanelProps> = ({
               <Link
                 key={conv.id}
                 href={`/chat/${conv.id}`}
+                aria-current={isActive ? 'page' : undefined}
                 className={`block transition-colors p-3.5 sm:p-4 hover:bg-muted/10 relative ${
                   isActive
                     ? 'bg-primary/5 border-l-4 border-primary text-foreground'
@@ -216,7 +217,7 @@ export const ConversationListPanel: React.FC<ConversationListPanelProps> = ({
                         >
                           {otherUser?.name || 'User'}
                         </h4>
-                        <span className="text-[10px] px-1.5 py-0.2 rounded-full bg-muted/20 text-muted font-medium flex-shrink-0">
+                        <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-muted/20 text-muted font-medium flex-shrink-0">
                           {isTenant ? 'Owner' : 'Tenant'}
                         </span>
                       </div>

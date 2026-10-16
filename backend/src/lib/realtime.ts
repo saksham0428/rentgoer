@@ -7,7 +7,7 @@ export const initRealtime = () => {
   // No-op. Previously initialized Supabase Realtime Broadcast.
 };
 
-export const broadcastMessage = async (message: any) => {
+export const broadcastMessage = (message: any): void => {
   if (message && message.conversationId) {
     chatEventEmitter.emit(`message:${message.conversationId}`, message);
   }
