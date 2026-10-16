@@ -30,7 +30,13 @@ export default async function HomePage() {
             Zero hidden fees, pure transparency.
           </p>
           <div className="flex flex-col sm:flex-row justify-center items-center gap-4 w-full max-w-xs sm:max-w-none mx-auto">
-            {user?.role === 'OWNER' ? (
+            {user?.role === 'ADMIN' ? (
+              <Link href="/admin" className="w-full sm:w-auto">
+                <Button size="lg" className="w-full sm:w-auto font-semibold text-lg px-8 py-4">
+                  Admin Center
+                </Button>
+              </Link>
+            ) : user?.role === 'OWNER' ? (
               <Link href="/owner" className="w-full sm:w-auto">
                 <Button size="lg" className="w-full sm:w-auto font-semibold text-lg px-8 py-4">
                   Owner Dashboard
@@ -39,7 +45,7 @@ export default async function HomePage() {
             ) : (
               <Link href="/properties" className="w-full sm:w-auto">
                 <Button size="lg" className="w-full sm:w-auto font-semibold text-lg px-8 py-4">
-                  {user?.role === 'TENANT' ? 'Browse Properties' : 'Find a Property'}
+                  {user?.role === 'TENANT' ? 'Properties' : 'Find a Property'}
                 </Button>
               </Link>
             )}

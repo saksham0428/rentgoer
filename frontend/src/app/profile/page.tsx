@@ -52,6 +52,15 @@ function ProfileContent() {
   const [passwordError, setPasswordError] = useState('');
   const [passwordSuccess, setPasswordSuccess] = useState('');
 
+  // Email change state
+  const [isChangingEmail, setIsChangingEmail] = useState(false);
+  const [newEmail, setNewEmail] = useState('');
+  const [emailPassword, setEmailPassword] = useState('');
+  const [showEmailPassword, setShowEmailPassword] = useState(false);
+  const [emailLoading, setEmailLoading] = useState(false);
+  const [emailError, setEmailError] = useState('');
+  const [emailSuccess, setEmailSuccess] = useState('');
+
   // Sync initial tab from URL if changed
   useEffect(() => {
     const tabParam = searchParams.get('tab');
@@ -131,6 +140,48 @@ function ProfileContent() {
     setPhoneError('');
     setProfileError('');
     setProfileSuccess('');
+  };
+
+  // Handle Self-Service Email Change
+  const handleEmailSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setEmailError('');
+    setEmailSuccess('');
+
+    const trimmedEmail = newEmail.trim().toLowerCase();
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!trimmedEmail || !emailRegex.test(trimmedEmail)) {
+      setEmailError('Please enter a valid email address format.');
+      return;
+    }
+
+    if (trimmedEmail === user.email.toLowerCase()) {
+      setEmailError('New email must be different from your current email address.');
+      return;
+    }
+
+    if (!emailPassword) {
+      setEmailError('Current password is required to verify identity for email change.');
+      return;
+    }
+
+    setEmailLoading(true);
+
+    try {
+      const res = await api.put<{ success: boolean; message: string; user: any }>('/auth/change-email', {
+        newEmail: trimmedEmail,
+        password: emailPassword,
+      });
+
+      setEmailSuccess(res.message || 'Email address successfully updated.');
+      setNewEmail('');
+      setEmailPassword('');
+      await refreshUser();
+    } catch (err: any) {
+      setEmailError(err.message || 'Failed to update email address. Please verify your password.');
+    } finally {
+      setEmailLoading(false);
+    }
   };
 
   // Handle Password Change
@@ -268,7 +319,8 @@ function ProfileContent() {
 
       {/* Tab 1: Profile Details */}
       {activeTab === 'profile' && (
-        <div className="bg-card border border-border rounded-xl p-5 sm:p-8 shadow-sm">
+        <>
+          <div className="bg-card border border-border rounded-xl p-5 sm:p-8 shadow-sm">
           <div className="mb-6">
             <h3 className="text-lg font-bold text-foreground">Personal Information</h3>
             <p className="text-sm text-muted mt-0.5">Update your contact information visible to verified parties.</p>
@@ -322,25 +374,6 @@ function ProfileContent() {
                 <p className="mt-1 text-xs text-muted">Used for rental coordination and account security.</p>
               </div>
 
-              {/* Email Address (Read-only for security) */}
-              <div>
-                <label className="block text-sm font-medium text-foreground mb-1 flex items-center gap-1.5">
-                  Email Address
-                  <span className="text-[11px] text-muted font-normal">(Read-only)</span>
-                </label>
-                <div className="relative">
-                  <input
-                    type="email"
-                    value={user.email}
-                    disabled
-                    readOnly
-                    className="w-full px-3 py-2 bg-muted/10 border border-border rounded-md text-sm text-muted cursor-not-allowed pr-9 focus:outline-none"
-                  />
-                  <Lock className="h-4 w-4 text-muted absolute right-3 top-1/2 -translate-y-1/2" />
-                </div>
-                <p className="mt-1 text-xs text-muted">Account email cannot be modified directly for account security.</p>
-              </div>
-
               {/* Role (Read-only) */}
               <div>
                 <label className="block text-sm font-medium text-foreground mb-1 flex items-center gap-1.5">
@@ -353,7 +386,7 @@ function ProfileContent() {
                     value={user.role === 'TENANT' ? 'Tenant (Rental Seeker)' : user.role === 'OWNER' ? 'Property Owner' : 'Platform Administrator'}
                     disabled
                     readOnly
-                    className="w-full px-3 py-2 bg-muted/10 border border-border rounded-md text-sm text-muted cursor-not-allowed pr-9 focus:outline-none capitalize"
+                    className="w-full px-3 py-2 bg-muted/10 border border-border rounded-lg text-sm text-muted cursor-not-allowed pr-9 focus:outline-none capitalize"
                   />
                   <Building className="h-4 w-4 text-muted absolute right-3 top-1/2 -translate-y-1/2" />
                 </div>
@@ -389,7 +422,143 @@ function ProfileContent() {
             </div>
           </form>
         </div>
-      )}
+
+        {/* Card 2: Account Email & Credentials */}
+        <div className="mt-8 bg-card border border-border rounded-xl p-5 sm:p-8 shadow-sm">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
+            <div>
+              <h3 className="text-lg font-bold text-foreground flex items-center gap-2">
+                <Mail className="h-5 w-5 text-primary" />
+                Account Email Address
+              </h3>
+              <p className="text-sm text-muted mt-0.5">Your email address is your primary identity for login and notifications.</p>
+            </div>
+            {!isChangingEmail && (
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={() => {
+                  setIsChangingEmail(true);
+                  setEmailError('');
+                  setEmailSuccess('');
+                }}
+                className="self-start sm:self-auto font-medium"
+              >
+                Change Email
+              </Button>
+            )}
+          </div>
+
+          {/* Current Email display */}
+          <div className="p-4 bg-muted/10 rounded-lg border border-border flex items-center justify-between">
+            <div>
+              <p className="text-xs font-semibold text-muted uppercase tracking-wider">Current Email</p>
+              <p className="text-base font-semibold text-foreground mt-0.5">{user.email}</p>
+            </div>
+            <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200">
+              <CheckCircle2 className="h-3.5 w-3.5" />
+              Active
+            </span>
+          </div>
+
+          {/* Change Email Form */}
+          {isChangingEmail && (
+            <form onSubmit={handleEmailSubmit} className="mt-6 pt-6 border-t border-border space-y-5 animate-in fade-in duration-150">
+              <div className="p-3 bg-blue-50 border border-blue-200 rounded-lg text-blue-900 text-xs sm:text-sm">
+                <p className="font-semibold flex items-center gap-1.5">
+                  <ShieldCheck className="h-4 w-4 text-blue-600" />
+                  Security Verification Required
+                </p>
+                <p className="mt-1 text-blue-800">
+                  Enter your new email address and confirm with your current password. For security, other active sessions will be revoked.
+                </p>
+              </div>
+
+              {emailSuccess && (
+                <div className="p-4 bg-success/10 border border-success/20 rounded-lg flex items-center gap-3 text-success text-sm font-medium">
+                  <CheckCircle2 className="h-5 w-5 flex-shrink-0" />
+                  <span>{emailSuccess}</span>
+                </div>
+              )}
+
+              {emailError && (
+                <div className="p-4 bg-danger/10 border border-danger/20 rounded-lg flex items-center gap-3 text-danger text-sm font-medium">
+                  <AlertCircle className="h-5 w-5 flex-shrink-0" />
+                  <span>{emailError}</span>
+                </div>
+              )}
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
+                <div>
+                  <Input
+                    label="New Email Address"
+                    id="new-email"
+                    type="email"
+                    value={newEmail}
+                    onChange={(e) => setNewEmail(e.target.value)}
+                    placeholder="e.g. yourname@example.com"
+                    required
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-foreground mb-1">
+                    Current Password
+                  </label>
+                  <div className="relative">
+                    <input
+                      type={showEmailPassword ? 'text' : 'password'}
+                      value={emailPassword}
+                      onChange={(e) => setEmailPassword(e.target.value)}
+                      placeholder="••••••••"
+                      required
+                      className="w-full px-3 py-2 bg-background border border-border rounded-lg text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary pr-10"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowEmailPassword(!showEmailPassword)}
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-muted hover:text-foreground p-1 focus:outline-none"
+                    >
+                      {showEmailPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                    </button>
+                  </div>
+                </div>
+              </div>
+
+              <div className="flex justify-end gap-3 pt-2">
+                <Button
+                  type="button"
+                  variant="ghost"
+                  onClick={() => {
+                    setIsChangingEmail(false);
+                    setNewEmail('');
+                    setEmailPassword('');
+                    setEmailError('');
+                  }}
+                  disabled={emailLoading}
+                >
+                  Cancel
+                </Button>
+                <Button
+                  type="submit"
+                  disabled={emailLoading}
+                >
+                  {emailLoading ? (
+                    <>
+                      <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                      Updating Email...
+                    </>
+                  ) : (
+                    'Confirm & Update Email'
+                  )}
+                </Button>
+              </div>
+            </form>
+          )}
+        </div>
+      </>
+    )}
 
       {/* Tab 2: Security & Password */}
       {activeTab === 'security' && (

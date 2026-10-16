@@ -6,7 +6,10 @@
   "scripts": {
     "start": "node dist/index.js",
     "dev": "tsx watch src/index.ts",
-    "build": "tsc"
+    "build": "tsc",
+    "admin:provision": "tsx src/scripts/provision-admin.ts",
+    "admin:provision:dist": "node dist/scripts/provision-admin.js",
+    "test:provision": "tsx scratch/test-hardened-provisioning-unit.ts"
   },
   "keywords": [],
   "author": "",

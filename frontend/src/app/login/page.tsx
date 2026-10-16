@@ -14,10 +14,10 @@ function LoginContent() {
   const searchParams = useSearchParams();
   const message = searchParams.get('message');
   const { refreshUser } = useAuth();
-  
+
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
-  
+
   const [formData, setFormData] = useState({
     email: '',
     password: '',
@@ -34,12 +34,28 @@ function LoginContent() {
 
     try {
       const res = await api.post<{ success: boolean; user: any; message: string }>('/auth/login', formData);
-      
+
       // Update context user state
       await refreshUser();
 
       const role = res.user?.role;
-      if (role === 'OWNER') {
+      const redirectUrl = searchParams.get('redirect');
+      const isSafeInternalRedirect =
+        redirectUrl &&
+        redirectUrl.startsWith('/') &&
+        !redirectUrl.startsWith('//') &&
+        !redirectUrl.startsWith('/\\');
+
+      if (isSafeInternalRedirect) {
+        // If a non-admin user somehow had an admin redirect, route them to their designated dashboard
+        if (redirectUrl.startsWith('/admin') && role !== 'ADMIN') {
+          router.push(role === 'OWNER' ? '/owner' : '/tenant');
+        } else {
+          router.push(redirectUrl);
+        }
+      } else if (role === 'ADMIN') {
+        router.push('/admin');
+      } else if (role === 'OWNER') {
         router.push('/owner');
       } else if (role === 'TENANT') {
         router.push('/properties');
@@ -71,7 +87,7 @@ function LoginContent() {
             <span>{message}</span>
           </div>
         )}
-        
+
         {error && (
           <div className="bg-danger/10 border border-danger/20 text-danger px-4 py-3 rounded-lg text-sm font-medium" role="alert">
             {error}

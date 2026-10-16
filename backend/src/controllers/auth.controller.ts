@@ -13,7 +13,7 @@ const generateTokenAndSetCookie = (res: Response, userId: string, role: Role, to
   const token = jwt.sign({ id: userId, role, tokenVersion }, secret, { expiresIn: '7d' });
 
   const isProduction = process.env.NODE_ENV === 'production';
-  
+
   res.cookie('rentgoer_token', token, {
     httpOnly: true,
     secure: isProduction,
@@ -154,7 +154,7 @@ export const logout = (req: Request, res: Response): void => {
     secure: process.env.NODE_ENV === 'production',
     sameSite: 'lax',
   });
-  
+
   res.status(200).json({
     success: true,
     message: 'Logged out successfully',
@@ -329,6 +329,110 @@ export const changePassword = async (req: Request, res: Response): Promise<void>
     });
   } catch (error) {
     console.error('Change password error:', error);
+    res.status(500).json({ success: false, message: 'Internal server error' });
+  }
+};
+
+export const changeEmail = async (req: Request, res: Response): Promise<void> => {
+  try {
+    const userId = req.user?.id;
+    if (!userId) {
+      res.status(401).json({ success: false, message: 'Unauthenticated' });
+      return;
+    }
+
+    const { newEmail, password } = req.body;
+
+    if (!newEmail || !password) {
+      res.status(400).json({ success: false, message: 'New email address and current password are required' });
+      return;
+    }
+
+    if (typeof newEmail !== 'string' || typeof password !== 'string') {
+      res.status(400).json({ success: false, message: 'Invalid request data' });
+      return;
+    }
+
+    const normalizedEmail = newEmail.toLowerCase().trim();
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(normalizedEmail) || normalizedEmail.length > 255) {
+      res.status(400).json({ success: false, message: 'Invalid email address format' });
+      return;
+    }
+
+    // Retrieve user record
+    const user = await prisma.user.findUnique({
+      where: { id: userId },
+      select: {
+        id: true,
+        email: true,
+        passwordHash: true,
+        role: true,
+        tokenVersion: true,
+      },
+    });
+
+    if (!user) {
+      res.status(404).json({ success: false, message: 'User not found' });
+      return;
+    }
+
+    if (normalizedEmail === user.email.toLowerCase()) {
+      res.status(400).json({ success: false, message: 'New email must be different from your current email' });
+      return;
+    }
+
+    // Verify current password with bcrypt
+    const isPasswordValid = await bcrypt.compare(password, user.passwordHash);
+    if (!isPasswordValid) {
+      res.status(400).json({ success: false, message: 'Current password is incorrect' });
+      return;
+    }
+
+    // Check if new email is already in use by another account
+    const existingUser = await prisma.user.findUnique({
+      where: { email: normalizedEmail },
+      select: { id: true },
+    });
+
+    if (existingUser && existingUser.id !== userId) {
+      res.status(409).json({ success: false, message: 'Email address is already in use by another account' });
+      return;
+    }
+
+    // Atomically update email and increment tokenVersion to revoke old sessions on other devices
+    const updatedUser = await prisma.user.update({
+      where: { id: userId },
+      data: {
+        email: normalizedEmail,
+        tokenVersion: { increment: 1 },
+      },
+      select: {
+        id: true,
+        name: true,
+        email: true,
+        role: true,
+        phone: true,
+        isVerified: true,
+        createdAt: true,
+        tokenVersion: true,
+      },
+    });
+
+    // Re-issue cookie with updated tokenVersion for the active session (7 days)
+    generateTokenAndSetCookie(res, updatedUser.id, updatedUser.role, updatedUser.tokenVersion);
+
+    res.status(200).json({
+      success: true,
+      message: 'Email address successfully updated',
+      user: updatedUser,
+    });
+  } catch (error: any) {
+    if (error?.code === 'P2002') {
+      res.status(409).json({ success: false, message: 'Email address is already in use by another account' });
+      return;
+    }
+    console.error('Change email error:', error);
     res.status(500).json({ success: false, message: 'Internal server error' });
   }
 };
