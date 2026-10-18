@@ -1,6 +1,6 @@
 /* eslint-disable react-hooks/set-state-in-effect */
 'use client';
-import React, { createContext, useContext, useState, useEffect, ReactNode, useCallback } from 'react';
+import React, { createContext, useContext, useState, useEffect, ReactNode, useCallback, useRef, useMemo } from 'react';
 import { api } from '../lib/api';
 import { useAuth } from './AuthContext';
 
@@ -29,6 +29,7 @@ export const NotificationProvider = ({ children }: { children: ReactNode }) => {
   const { user } = useAuth();
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [unreadCount, setUnreadCount] = useState<number>(0);
+  const hasFetchedRef = useRef(false);
 
   const fetchNotifications = useCallback(async () => {
     if (!user) return;
@@ -40,11 +41,15 @@ export const NotificationProvider = ({ children }: { children: ReactNode }) => {
     } catch (err) {
       console.error('Failed to fetch notifications', err);
     }
-  }, [user]);
+  }, [user?.id]);
 
   useEffect(() => {
     if (user) {
-      fetchNotifications();
+      // Fetch initial notifications and unread count strictly on mount
+      if (!hasFetchedRef.current) {
+        hasFetchedRef.current = true;
+        fetchNotifications();
+      }
 
       const API_URL = process.env.NEXT_PUBLIC_API_URL || '/api/proxy';
       const eventSource = new EventSource(`${API_URL}/notifications/realtime`, {
@@ -102,10 +107,11 @@ export const NotificationProvider = ({ children }: { children: ReactNode }) => {
         eventSource.close();
       };
     } else {
+      hasFetchedRef.current = false;
       setNotifications([]);
       setUnreadCount(0);
     }
-  }, [user, fetchNotifications]);
+  }, [user?.id, fetchNotifications]);
 
   const markConversationAsRead = useCallback(async (conversationId: string) => {
     if (!conversationId) return;
@@ -146,7 +152,7 @@ export const NotificationProvider = ({ children }: { children: ReactNode }) => {
     }
   }, []);
 
-  const markAsRead = async (id: string) => {
+  const markAsRead = useCallback(async (id: string) => {
     const target = notifications.find(n => n.id === id);
     const convId = target?.type === 'CHAT_MESSAGE' ? target.referenceId : null;
 
@@ -171,9 +177,9 @@ export const NotificationProvider = ({ children }: { children: ReactNode }) => {
     } catch (err) {
       console.error('Failed to mark notification as read', err);
     }
-  };
+  }, [notifications]);
 
-  const markAllAsRead = async () => {
+  const markAllAsRead = useCallback(async () => {
     try {
       setNotifications(prev => prev.map(n => ({ ...n, isRead: true })));
       setUnreadCount(0);
@@ -184,10 +190,19 @@ export const NotificationProvider = ({ children }: { children: ReactNode }) => {
     } catch (err) {
       console.error('Failed to mark all as read', err);
     }
-  };
+  }, []);
+
+  const contextValue = useMemo(() => ({
+    notifications,
+    unreadCount,
+    markAsRead,
+    markAllAsRead,
+    fetchNotifications,
+    markConversationAsRead,
+  }), [notifications, unreadCount, markAsRead, markAllAsRead, fetchNotifications, markConversationAsRead]);
 
   return (
-    <NotificationContext.Provider value={{ notifications, unreadCount, markAsRead, markAllAsRead, fetchNotifications, markConversationAsRead }}>
+    <NotificationContext.Provider value={contextValue}>
       {children}
     </NotificationContext.Provider>
   );

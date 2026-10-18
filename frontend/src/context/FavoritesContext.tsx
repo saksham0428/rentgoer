@@ -1,6 +1,6 @@
 'use client';
 
-import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
+import React, { createContext, useContext, useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import { useAuth } from './AuthContext';
 import { api } from '@/lib/api';
 
@@ -16,6 +16,7 @@ export const FavoritesProvider = ({ children }: { children: React.ReactNode }) =
   const { user } = useAuth();
   const [favoriteIds, setFavoriteIds] = useState<string[]>([]);
   const [loading, setLoading] = useState(false);
+  const hasFetchedRef = useRef(false);
 
   const fetchFavorites = useCallback(async () => {
     if (user?.role !== 'TENANT') {
@@ -34,13 +35,22 @@ export const FavoritesProvider = ({ children }: { children: React.ReactNode }) =
     } finally {
       setLoading(false);
     }
-  }, [user]);
+  }, [user?.role]);
 
   useEffect(() => {
-    fetchFavorites();
-  }, [fetchFavorites]);
+    if (user && user.role === 'TENANT') {
+      // Fetch favorite IDs strictly once on mount
+      if (!hasFetchedRef.current) {
+        hasFetchedRef.current = true;
+        fetchFavorites();
+      }
+    } else {
+      hasFetchedRef.current = false;
+      setFavoriteIds([]);
+    }
+  }, [user?.id, user?.role, fetchFavorites]);
 
-  const toggleFavorite = async (propertyId: string): Promise<boolean> => {
+  const toggleFavorite = useCallback(async (propertyId: string): Promise<boolean> => {
     if (!user) return false;
 
     const isCurrentlyFavorited = favoriteIds.includes(propertyId);
@@ -69,10 +79,16 @@ export const FavoritesProvider = ({ children }: { children: React.ReactNode }) =
       console.error('Failed to toggle favorite:', error);
       return false;
     }
-  };
+  }, [user, favoriteIds]);
+
+  const contextValue = useMemo(() => ({
+    favoriteIds,
+    toggleFavorite,
+    loading,
+  }), [favoriteIds, toggleFavorite, loading]);
 
   return (
-    <FavoritesContext.Provider value={{ favoriteIds, toggleFavorite, loading }}>
+    <FavoritesContext.Provider value={contextValue}>
       {children}
     </FavoritesContext.Provider>
   );

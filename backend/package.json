@@ -13,7 +13,8 @@
     "test:chat": "tsx scratch/test-chat-unit.ts",
     "test:notif-sync": "tsx scratch/test-notification-sync-unit.ts",
     "test:pre-rental": "tsx scratch/test-pre-rental-chat-unit.ts",
-    "test:concurrency": "tsx scratch/test-concurrency-controllers.ts"
+    "test:concurrency": "tsx scratch/test-concurrency-controllers.ts",
+    "test:properties": "tsx scratch/test-properties-optimization.ts"
   },
   "keywords": [],
   "author": "",

@@ -233,7 +233,7 @@ export const getProperties = async (req: Request, res: Response): Promise<void> 
 
     const skip = (pageNumber - 1) * limitNumber;
 
-    const [total, properties] = await prisma.$transaction([
+    const [total, properties] = await Promise.all([
       prisma.property.count({ where }),
       prisma.property.findMany({
         where,
@@ -246,16 +246,18 @@ export const getProperties = async (req: Request, res: Response): Promise<void> 
           },
           images: true,
         },
-      })
+      }),
     ]);
 
     const propertyIds = properties.map(p => p.id);
-    const aggregates = await prisma.review.groupBy({
-      by: ['propertyId'],
-      where: { propertyId: { in: propertyIds } },
-      _avg: { rating: true },
-      _count: true
-    });
+    const aggregates = propertyIds.length > 0
+      ? await prisma.review.groupBy({
+          by: ['propertyId'],
+          where: { propertyId: { in: propertyIds } },
+          _avg: { rating: true },
+          _count: true,
+        })
+      : [];
 
     const aggregateMap = aggregates.reduce((acc, curr) => {
       acc[curr.propertyId] = {

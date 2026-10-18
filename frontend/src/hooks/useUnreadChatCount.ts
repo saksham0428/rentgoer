@@ -1,12 +1,13 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { useAuth } from '@/context/AuthContext';
 import { api } from '@/lib/api';
 
 export const useUnreadChatCount = () => {
   const { user } = useAuth();
   const [unreadChatCount, setUnreadChatCount] = useState<number>(0);
+  const hasFetchedRef = useRef(false);
 
   const fetchUnreadCount = useCallback(async () => {
     if (!user) {
@@ -22,21 +23,21 @@ export const useUnreadChatCount = () => {
     } catch {
       // Silently ignore if unauthenticated or network error
     }
-  }, [user]);
+  }, [user?.id]);
 
   useEffect(() => {
-    fetchUnreadCount();
+    if (!user) {
+      hasFetchedRef.current = false;
+      setUnreadChatCount(0);
+      return;
+    }
 
-    // Listen to focus and custom sync events to refresh unread count immediately
-    const handleSync = () => fetchUnreadCount();
-    window.addEventListener('focus', handleSync);
-    window.addEventListener('chat:unread_sync', handleSync);
-
-    return () => {
-      window.removeEventListener('focus', handleSync);
-      window.removeEventListener('chat:unread_sync', handleSync);
-    };
-  }, [fetchUnreadCount]);
+    // Only count on mount (once per authenticated session without re-fetching on simple renders)
+    if (!hasFetchedRef.current) {
+      hasFetchedRef.current = true;
+      fetchUnreadCount();
+    }
+  }, [user?.id, fetchUnreadCount]);
 
   return { unreadChatCount, refreshUnreadCount: fetchUnreadCount };
 };

@@ -23,6 +23,7 @@ import {
 } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
 import { useNotifications } from '@/context/NotificationContext';
+import { useFavorites } from '@/context/FavoritesContext';
 import { useUnreadChatCount } from '@/hooks/useUnreadChatCount';
 import { ProfileDropdown } from './ProfileDropdown';
 
@@ -31,6 +32,8 @@ export const Navbar = () => {
   const { user, loading, logout } = useAuth();
   const { unreadCount } = useNotifications();
   const { unreadChatCount } = useUnreadChatCount();
+  const { favoriteIds } = useFavorites();
+  const favoriteCount = favoriteIds.length;
   const pathname = usePathname();
 
   const toggleMenu = () => setIsOpen(!isOpen);
@@ -236,6 +239,11 @@ export const Navbar = () => {
                             isActive('/favorites') ? 'fill-red-500 text-red-500' : ''
                           }`} 
                         />
+                        {favoriteCount > 0 && (
+                          <span className="absolute -top-1 -right-1 flex items-center justify-center min-w-[1.25rem] h-5 px-1 bg-red-500 text-white text-[10px] font-bold rounded-full shadow-xs animate-in zoom-in-75">
+                            {favoriteCount > 99 ? '99+' : favoriteCount}
+                          </span>
+                        )}
                       </Link>
                     )}
 
@@ -314,13 +322,18 @@ export const Navbar = () => {
                   <Link
                     href="/favorites"
                     onClick={closeMenu}
-                    className={`hidden xs:inline-flex p-1.5 sm:p-2 rounded-lg transition-all duration-150 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/25 active:scale-95 ${
+                    className={`hidden xs:inline-flex relative p-1.5 sm:p-2 rounded-lg transition-all duration-150 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/25 active:scale-95 ${
                       isActive('/favorites') ? 'text-red-500 bg-red-50' : 'text-muted hover:text-red-500'
                     }`}
                     title="Saved Properties"
                     aria-label="Saved Properties"
                   >
                     <Heart className={`h-5 w-5 ${isActive('/favorites') ? 'fill-red-500 text-red-500' : ''}`} />
+                    {favoriteCount > 0 && (
+                      <span className="absolute -top-1 -right-1 flex items-center justify-center min-w-[1.125rem] h-4 px-1 bg-red-500 text-white text-[10px] font-bold rounded-full shadow-xs">
+                        {favoriteCount > 99 ? '99+' : favoriteCount}
+                      </span>
+                    )}
                   </Link>
                 )}
 
@@ -458,9 +471,16 @@ export const Navbar = () => {
                           : 'text-foreground hover:bg-muted/10'
                       }`}
                     >
-                      <div className="flex items-center gap-2">
-                        <Heart className="h-4 w-4 text-red-500" />
-                        <span>Saved Properties</span>
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-2">
+                          <Heart className="h-4 w-4 text-red-500" />
+                          <span>Saved Properties</span>
+                        </div>
+                        {favoriteCount > 0 && (
+                          <span className="flex items-center justify-center min-w-[1.25rem] h-5 px-1.5 bg-red-500 text-white text-xs font-bold rounded-full">
+                            {favoriteCount}
+                          </span>
+                        )}
                       </div>
                     </Link>
                   </>
