@@ -20,6 +20,7 @@ interface NotificationContextType {
   markAsRead: (id: string) => Promise<void>;
   markAllAsRead: () => Promise<void>;
   fetchNotifications: () => Promise<void>;
+  markConversationAsRead: (conversationId: string) => Promise<void>;
 }
 
 const NotificationContext = createContext<NotificationContextType | undefined>(undefined);
@@ -52,7 +53,41 @@ export const NotificationProvider = ({ children }: { children: ReactNode }) => {
 
       eventSource.onmessage = (event) => {
         try {
-          const notification: Notification = JSON.parse(event.data);
+          const data = JSON.parse(event.data);
+
+          // Handle real-time read synchronization events
+          if (data && data.type === 'NOTIFICATION_READ_SYNC') {
+            if (typeof data.unreadNotificationCount === 'number') {
+              setUnreadCount(data.unreadNotificationCount);
+            }
+            if (data.action === 'CONVERSATION_READ' && data.conversationId) {
+              setNotifications(prev =>
+                prev.map(n =>
+                  n.type === 'CHAT_MESSAGE' && n.referenceId === data.conversationId
+                    ? { ...n, isRead: true }
+                    : n
+                )
+              );
+            } else if (data.action === 'NOTIFICATION_READ' && data.notificationId) {
+              setNotifications(prev =>
+                prev.map(n =>
+                  n.id === data.notificationId || (data.conversationId && n.type === 'CHAT_MESSAGE' && n.referenceId === data.conversationId)
+                    ? { ...n, isRead: true }
+                    : n
+                )
+              );
+            } else if (data.action === 'ALL_READ') {
+              setNotifications(prev => prev.map(n => ({ ...n, isRead: true })));
+            }
+
+            if (typeof window !== 'undefined') {
+              window.dispatchEvent(new CustomEvent('chat:unread_sync', { detail: data }));
+            }
+            return;
+          }
+
+          // Regular incoming notification
+          const notification: Notification = data;
           setNotifications(prev => {
             if (prev.some(n => n.id === notification.id)) return prev;
             setUnreadCount(c => c + 1);
@@ -72,11 +107,67 @@ export const NotificationProvider = ({ children }: { children: ReactNode }) => {
     }
   }, [user, fetchNotifications]);
 
-  const markAsRead = async (id: string) => {
+  const markConversationAsRead = useCallback(async (conversationId: string) => {
+    if (!conversationId) return;
+
+    // Optimistically mark notifications for this conversation as read
+    setNotifications(prev => {
+      let markedCount = 0;
+      const updated = prev.map(n => {
+        if (n.type === 'CHAT_MESSAGE' && n.referenceId === conversationId && !n.isRead) {
+          markedCount++;
+          return { ...n, isRead: true };
+        }
+        return n;
+      });
+      if (markedCount > 0) {
+        setUnreadCount(c => Math.max(0, c - markedCount));
+      }
+      return updated;
+    });
+
+    // Notify unread chat count hook immediately
+    if (typeof window !== 'undefined') {
+      window.dispatchEvent(new CustomEvent('chat:unread_sync', { detail: { conversationId } }));
+    }
+
     try {
-      await api.put(`/notifications/${id}/read`, {});
-      setNotifications(prev => prev.map(n => n.id === id ? { ...n, isRead: true } : n));
+      const res = await api.patch<{
+        success: boolean;
+        unreadNotificationCount?: number;
+        unreadChatCount?: number;
+      }>(`/conversations/${conversationId}/read`, {});
+
+      if (res && typeof res.unreadNotificationCount === 'number') {
+        setUnreadCount(res.unreadNotificationCount);
+      }
+    } catch (err) {
+      console.error('Failed to mark conversation notifications as read:', err);
+    }
+  }, []);
+
+  const markAsRead = async (id: string) => {
+    const target = notifications.find(n => n.id === id);
+    const convId = target?.type === 'CHAT_MESSAGE' ? target.referenceId : null;
+
+    try {
+      // Optimistic update
+      setNotifications(prev => prev.map(n => {
+        if (n.id === id || (convId && n.type === 'CHAT_MESSAGE' && n.referenceId === convId)) {
+          return { ...n, isRead: true };
+        }
+        return n;
+      }));
       setUnreadCount(prev => Math.max(0, prev - 1));
+
+      if (typeof window !== 'undefined') {
+        window.dispatchEvent(new CustomEvent('chat:unread_sync', { detail: { conversationId: convId } }));
+      }
+
+      const res = await api.put<{ success: boolean; data: any; unreadNotificationCount?: number }>(`/notifications/${id}/read`, {});
+      if (res && typeof res.unreadNotificationCount === 'number') {
+        setUnreadCount(res.unreadNotificationCount);
+      }
     } catch (err) {
       console.error('Failed to mark notification as read', err);
     }
@@ -84,16 +175,19 @@ export const NotificationProvider = ({ children }: { children: ReactNode }) => {
 
   const markAllAsRead = async () => {
     try {
-      await api.put('/notifications/read-all', {});
       setNotifications(prev => prev.map(n => ({ ...n, isRead: true })));
       setUnreadCount(0);
+      if (typeof window !== 'undefined') {
+        window.dispatchEvent(new CustomEvent('chat:unread_sync'));
+      }
+      await api.put('/notifications/read-all', {});
     } catch (err) {
       console.error('Failed to mark all as read', err);
     }
   };
 
   return (
-    <NotificationContext.Provider value={{ notifications, unreadCount, markAsRead, markAllAsRead, fetchNotifications }}>
+    <NotificationContext.Provider value={{ notifications, unreadCount, markAsRead, markAllAsRead, fetchNotifications, markConversationAsRead }}>
       {children}
     </NotificationContext.Provider>
   );

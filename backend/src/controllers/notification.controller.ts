@@ -1,6 +1,6 @@
 import { Request, Response } from 'express';
 import { prisma } from '../lib/prisma';
-import { notificationEventEmitter } from '../lib/realtime-notifications';
+import { notificationEventEmitter, emitNotification } from '../lib/realtime-notifications';
 import { sseTracker } from '../lib/sse-tracker';
 
 export const getNotifications = async (req: Request, res: Response): Promise<void> => {
@@ -68,16 +68,83 @@ export const markAsRead = async (req: Request, res: Response): Promise<void> => 
     }
 
     if (notification.isRead) {
-      res.status(200).json({ success: true, data: notification });
+      const unreadNotificationCount = await prisma.notification.count({
+        where: { userId, isRead: false }
+      });
+      res.status(200).json({ success: true, data: notification, unreadNotificationCount });
       return;
     }
 
-    const updated = await prisma.notification.update({
-      where: { id: notificationId },
-      data: { isRead: true, readAt: new Date() }
+    const now = new Date();
+    const result = await prisma.$transaction(async (tx) => {
+      const updated = await tx.notification.update({
+        where: { id: notificationId },
+        data: { isRead: true, readAt: now }
+      });
+
+      // If this is a CHAT_MESSAGE notification and references a conversation,
+      // mark received unread messages in that conversation as read too
+      if (notification.type === 'CHAT_MESSAGE' && notification.referenceId) {
+        await tx.message.updateMany({
+          where: {
+            conversationId: notification.referenceId,
+            senderId: { not: userId },
+            readAt: null
+          },
+          data: { readAt: now }
+        });
+
+        // Also mark any other unread notifications for this conversation as read
+        await tx.notification.updateMany({
+          where: {
+            userId,
+            type: 'CHAT_MESSAGE',
+            referenceId: notification.referenceId,
+            isRead: false
+          },
+          data: { isRead: true, readAt: now }
+        });
+      }
+
+      const unreadNotificationCount = await tx.notification.count({
+        where: { userId, isRead: false }
+      });
+
+      const unreadChatCount = await tx.message.count({
+        where: {
+          conversation: {
+            OR: [
+              { tenantId: userId },
+              { ownerId: userId }
+            ]
+          },
+          senderId: { not: userId },
+          readAt: null
+        }
+      });
+
+      return { updated, unreadNotificationCount, unreadChatCount };
     });
 
-    res.status(200).json({ success: true, data: updated });
+    try {
+      emitNotification(userId, {
+        type: 'NOTIFICATION_READ_SYNC',
+        action: 'NOTIFICATION_READ',
+        notificationId,
+        conversationId: notification.referenceId,
+        unreadNotificationCount: result.unreadNotificationCount,
+        unreadChatCount: result.unreadChatCount
+      });
+    } catch (emitErr) {
+      console.error('Error emitting read synchronization notification:', emitErr);
+    }
+
+    res.status(200).json({
+      success: true,
+      data: result.updated,
+      unreadNotificationCount: result.unreadNotificationCount,
+      unreadChatCount: result.unreadChatCount
+    });
   } catch (error) {
     console.error('Error marking notification as read:', error);
     res.status(500).json({ success: false, message: 'Internal server error' });
@@ -92,12 +159,46 @@ export const markAllAsRead = async (req: Request, res: Response): Promise<void> 
       return;
     }
 
-    await prisma.notification.updateMany({
-      where: { userId, isRead: false },
-      data: { isRead: true, readAt: new Date() }
+    const now = new Date();
+    await prisma.$transaction(async (tx) => {
+      await tx.notification.updateMany({
+        where: { userId, isRead: false },
+        data: { isRead: true, readAt: now }
+      });
+
+      // Synchronize all received chat messages across user's conversations
+      await tx.message.updateMany({
+        where: {
+          conversation: {
+            OR: [
+              { tenantId: userId },
+              { ownerId: userId }
+            ]
+          },
+          senderId: { not: userId },
+          readAt: null
+        },
+        data: { readAt: now }
+      });
     });
 
-    res.status(200).json({ success: true, message: 'All notifications marked as read' });
+    try {
+      emitNotification(userId, {
+        type: 'NOTIFICATION_READ_SYNC',
+        action: 'ALL_READ',
+        unreadNotificationCount: 0,
+        unreadChatCount: 0
+      });
+    } catch (emitErr) {
+      console.error('Error emitting read synchronization notification:', emitErr);
+    }
+
+    res.status(200).json({
+      success: true,
+      message: 'All notifications marked as read',
+      unreadNotificationCount: 0,
+      unreadChatCount: 0
+    });
   } catch (error) {
     console.error('Error marking all notifications as read:', error);
     res.status(500).json({ success: false, message: 'Internal server error' });

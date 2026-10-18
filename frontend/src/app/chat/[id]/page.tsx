@@ -5,6 +5,7 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { useRouter, useParams } from 'next/navigation';
 import { useAuth } from '@/context/AuthContext';
+import { useNotifications } from '@/context/NotificationContext';
 import { ReportMessageButton } from '@/components/report/ReportMessageButton';
 import { api } from '@/lib/api';
 import { useConversationRealtime } from '@/hooks/useConversationRealtime';
@@ -39,6 +40,7 @@ export interface ChatMessage {
 
 export default function ChatWindowPage() {
   const { user, loading: authLoading } = useAuth();
+  const { markConversationAsRead } = useNotifications();
   const router = useRouter();
   const params = useParams();
   const conversationId = (params?.id as string) || '';
@@ -57,6 +59,11 @@ export default function ChatWindowPage() {
   const isNearBottomRef = useRef(true);
   const isInitialLoadRef = useRef(true);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const activeConversationIdRef = useRef(conversationId);
+
+  useEffect(() => {
+    activeConversationIdRef.current = conversationId;
+  }, [conversationId]);
 
   // 1. Fetch conversations list for left panel
   const fetchConversations = useCallback(async () => {
@@ -115,12 +122,19 @@ export default function ChatWindowPage() {
         currentConv = listRes.data?.find((c) => c.id === conversationId);
       }
 
+      // Check if conversation switched while fetching metadata
+      if (activeConversationIdRef.current !== conversationId) return;
+
       if (!currentConv) {
         router.replace('/chat');
         return;
       }
 
       const msgRes = await api.get<{ data: any[] }>(`/conversations/${conversationId}/messages`);
+
+      // Check if conversation switched while fetching messages
+      if (activeConversationIdRef.current !== conversationId) return;
+
       setConversation(currentConv);
 
       const serverMessages: ChatMessage[] = (msgRes.data || []).map((m) => ({
@@ -132,13 +146,20 @@ export default function ChatWindowPage() {
 
       // Refresh left panel conversations so unread counts update
       fetchConversations();
+
+      // Synchronize read status with notification center immediately upon successful load
+      markConversationAsRead(conversationId);
     } catch (err: any) {
       console.error('Failed to load chat details:', err);
-      router.replace('/chat');
+      if (activeConversationIdRef.current === conversationId) {
+        router.replace('/chat');
+      }
     } finally {
-      setLoading(false);
+      if (activeConversationIdRef.current === conversationId) {
+        setLoading(false);
+      }
     }
-  }, [conversationId, router, fetchConversations]);
+  }, [conversationId, router, fetchConversations, markConversationAsRead]);
 
   useEffect(() => {
     if (authLoading) return;
@@ -204,8 +225,14 @@ export default function ChatWindowPage() {
         // User is scrolled up reading history; do not move viewport, show indicator
         setShowNewMessagesIndicator(true);
       }
+
+      // If incoming message is from the other party and recipient is actively viewing this conversation,
+      // mark it as read immediately so notification bell count and notification center stay synchronized
+      if (newMsg.senderId !== user?.id) {
+        markConversationAsRead(conversationId);
+      }
     },
-    [conversationId, user?.id, scrollToBottom]
+    [conversationId, user?.id, scrollToBottom, markConversationAsRead]
   );
 
   // Hook handles connection, stable callbacks, and fallback polling while disconnected
@@ -459,14 +486,30 @@ export default function ChatWindowPage() {
                     <h3 className="font-bold text-foreground text-lg mb-1">
                       Start chatting with {otherUser?.name || 'them'}
                     </h3>
-                    <p className="text-sm text-muted max-w-sm mb-3">
-                      This verified conversation was created for your accepted rental request on{' '}
-                      <span className="font-semibold text-foreground">{property?.title}</span>.
-                    </p>
-                    <div className="flex items-center gap-1.5 text-xs text-success bg-success/10 px-3 py-1.5 rounded-full">
-                      <ShieldCheck className="h-4 w-4" />
-                      <span>Rental Request Accepted & Verified</span>
-                    </div>
+                    {conversation?.rentalRequest?.status === 'ACCEPTED' ? (
+                      <>
+                        <p className="text-sm text-muted max-w-sm mb-3">
+                          This verified conversation was created for your accepted rental request on{' '}
+                          <span className="font-semibold text-foreground">{property?.title}</span>.
+                        </p>
+                        <div className="flex items-center gap-1.5 text-xs text-success bg-success/10 px-3 py-1.5 rounded-full">
+                          <ShieldCheck className="h-4 w-4" />
+                          <span>Rental Request Accepted & Verified</span>
+                        </div>
+                      </>
+                    ) : (
+                      <>
+                        <p className="text-sm text-muted max-w-sm mb-3">
+                          Connect directly regarding{' '}
+                          <span className="font-semibold text-foreground">{property?.title}</span>.
+                          Ask questions about rent, security deposit, furnishing, visits, or availability.
+                        </p>
+                        <div className="flex items-center gap-1.5 text-xs text-primary bg-primary/10 px-3 py-1.5 rounded-full font-medium">
+                          <ShieldCheck className="h-4 w-4 text-primary" />
+                          <span>Direct Pre-Rental Communication</span>
+                        </div>
+                      </>
+                    )}
                   </div>
                 ) : (
                   messages.map((msg, idx) => {

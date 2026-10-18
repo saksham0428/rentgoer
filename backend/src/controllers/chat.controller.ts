@@ -2,6 +2,7 @@ import { Request, Response } from 'express';
 import { prisma } from '../lib/prisma';
 import { chatEventEmitter, broadcastMessage } from '../lib/realtime';
 import { sseTracker } from '../lib/sse-tracker';
+import { emitNotification } from '../lib/realtime-notifications';
 
 export const getConversations = async (req: Request, res: Response): Promise<void> => {
   try {
@@ -36,6 +37,9 @@ export const getConversations = async (req: Request, res: Response): Promise<voi
         },
         owner: {
           select: { id: true, name: true, email: true }
+        },
+        rentalRequest: {
+          select: { id: true, status: true }
         },
         messages: {
           orderBy: { createdAt: 'desc' },
@@ -194,19 +198,64 @@ export const getMessages = async (req: Request, res: Response): Promise<void> =>
     });
 
     
-    // Mark unread messages as read asynchronously
-    prisma.message.updateMany({
+    // Synchronize read status using the atomic transactional helper
+    markConversationReadInternal(userId, conversationId).catch(err =>
+      console.error('Error synchronizing read status in getMessages:', err)
+    );
+
+    messages.reverse();
+
+    res.status(200).json({ success: true, data: messages });
+  } catch (error) {
+    console.error('Error fetching messages:', error);
+    res.status(500).json({ success: false, message: 'Internal server error' });
+  }
+};
+
+export const markConversationReadInternal = async (
+  userId: string,
+  conversationId: string
+): Promise<{
+  status: number;
+  message?: string;
+  data?: {
+    conversationId: string;
+    markedMessagesCount: number;
+    markedNotificationsCount: number;
+    unreadNotificationCount: number;
+    unreadChatCount: number;
+  };
+}> => {
+  const conversation = await prisma.conversation.findUnique({
+    where: { id: conversationId },
+    select: { id: true, tenantId: true, ownerId: true }
+  });
+
+  if (!conversation) {
+    return { status: 404, message: 'Conversation not found' };
+  }
+
+  if (conversation.tenantId !== userId && conversation.ownerId !== userId) {
+    return { status: 403, message: 'Forbidden' };
+  }
+
+  const now = new Date();
+
+  const result = await prisma.$transaction(async (tx) => {
+    // 1. Mark only messages the current user has received and viewed as read
+    const messagesResult = await tx.message.updateMany({
       where: {
         conversationId,
         senderId: { not: userId },
         readAt: null
       },
       data: {
-        readAt: new Date()
+        readAt: now
       }
-    }).catch(err => console.error('Error marking messages as read:', err));
+    });
 
-    prisma.notification.updateMany({
+    // 2. Mark corresponding chat-message notifications for that recipient as read
+    const notificationsResult = await tx.notification.updateMany({
       where: {
         userId,
         type: 'CHAT_MESSAGE',
@@ -215,15 +264,76 @@ export const getMessages = async (req: Request, res: Response): Promise<void> =>
       },
       data: {
         isRead: true,
-        readAt: new Date()
+        readAt: now
       }
-    }).catch(err => console.error('Error marking chat notifications as read:', err));
+    });
 
-    messages.reverse();
+    // 3. Count remaining unread notifications for this user
+    const unreadNotificationCount = await tx.notification.count({
+      where: {
+        userId,
+        isRead: false
+      }
+    });
 
-    res.status(200).json({ success: true, data: messages });
+    // 4. Count remaining unread chat messages for this user across all their conversations
+    const unreadChatCount = await tx.message.count({
+      where: {
+        conversation: {
+          OR: [
+            { tenantId: userId },
+            { ownerId: userId }
+          ]
+        },
+        senderId: { not: userId },
+        readAt: null
+      }
+    });
+
+    return {
+      conversationId,
+      markedMessagesCount: messagesResult.count,
+      markedNotificationsCount: notificationsResult.count,
+      unreadNotificationCount,
+      unreadChatCount
+    };
+  });
+
+  // Real-time synchronization: emit event via notification SSE channel
+  try {
+    emitNotification(userId, {
+      type: 'NOTIFICATION_READ_SYNC',
+      action: 'CONVERSATION_READ',
+      conversationId,
+      unreadNotificationCount: result.unreadNotificationCount,
+      unreadChatCount: result.unreadChatCount
+    });
+  } catch (emitErr) {
+    console.error('Error emitting read synchronization notification:', emitErr);
+  }
+
+  return { status: 200, data: result };
+};
+
+export const markConversationAsRead = async (req: Request, res: Response): Promise<void> => {
+  try {
+    const userId = req.user?.id;
+    if (!userId) {
+      res.status(401).json({ success: false, message: 'Unauthenticated' });
+      return;
+    }
+
+    const conversationId = req.params.id as string;
+    const result = await markConversationReadInternal(userId, conversationId);
+
+    if (result.status !== 200) {
+      res.status(result.status).json({ success: false, message: result.message });
+      return;
+    }
+
+    res.status(200).json({ success: true, ...result.data });
   } catch (error) {
-    console.error('Error fetching messages:', error);
+    console.error('Error marking conversation as read:', error);
     res.status(500).json({ success: false, message: 'Internal server error' });
   }
 };
@@ -265,11 +375,6 @@ export const sendMessage = async (req: Request, res: Response): Promise<void> =>
       return;
     }
 
-    if (conversation.rentalRequest.status !== 'ACCEPTED' && conversation.rentalRequest.status !== 'COMPLETED') {
-      res.status(409).json({ success: false, message: 'Chat is only available for ACCEPTED requests' });
-      return;
-    }
-
     const message = await prisma.message.create({
       data: {
         conversationId,
@@ -298,7 +403,7 @@ export const sendMessage = async (req: Request, res: Response): Promise<void> =>
         referenceId: conversation.id
       }
     });
-    import('../lib/realtime-notifications').then(m => m.emitNotification(recipientId, notification)).catch(console.error);
+    emitNotification(recipientId, notification);
 
     res.status(201).json({ success: true, data: message });
   } catch (error) {
@@ -310,53 +415,250 @@ export const sendMessage = async (req: Request, res: Response): Promise<void> =>
 export const createConversation = async (req: Request, res: Response): Promise<void> => {
   try {
     const userId = req.user?.id;
+    const userRole = req.user?.role;
     if (!userId) {
       res.status(401).json({ success: false, message: 'Unauthenticated' });
       return;
     }
 
-    const { rentalRequestId } = req.body;
-    if (!rentalRequestId || typeof rentalRequestId !== 'string') {
-      res.status(400).json({ success: false, message: 'rentalRequestId required' });
-      return;
-    }
+    const { propertyId, rentalRequestId } = req.body;
 
-    const rentalRequest = await prisma.rentalRequest.findUnique({
-      where: { id: rentalRequestId },
-      include: { property: true, conversation: true }
-    });
-
-    if (!rentalRequest) {
-      res.status(404).json({ success: false, message: 'Rental request not found' });
-      return;
-    }
-
-    if (rentalRequest.tenantId !== userId && rentalRequest.property.ownerId !== userId) {
-      res.status(403).json({ success: false, message: 'Forbidden' });
-      return;
-    }
-
-    if (rentalRequest.status !== 'ACCEPTED' && rentalRequest.status !== 'COMPLETED') {
-      res.status(409).json({ success: false, message: 'Chat is only available for ACCEPTED requests' });
-      return;
-    }
-
-    if (rentalRequest.conversation) {
-      res.status(200).json({ success: true, data: rentalRequest.conversation });
-      return;
-    }
-
-    // Should not reach here normally due to transaction, but for idempotency:
-    const conversation = await prisma.conversation.create({
-      data: {
-        rentalRequestId,
-        propertyId: rentalRequest.propertyId,
-        tenantId: rentalRequest.tenantId,
-        ownerId: rentalRequest.property.ownerId
+    // 1. Pre-rental conversation flow by propertyId
+    if (propertyId && typeof propertyId === 'string') {
+      if (userRole !== 'TENANT') {
+        res.status(403).json({ success: false, message: 'Only tenants can initiate pre-rental conversations' });
+        return;
       }
-    });
 
-    res.status(201).json({ success: true, data: conversation });
+      const property = await prisma.property.findUnique({
+        where: { id: propertyId },
+        select: { id: true, ownerId: true, isAvailable: true, title: true }
+      });
+
+      if (!property) {
+        res.status(404).json({ success: false, message: 'Property not found' });
+        return;
+      }
+
+      if (property.ownerId === userId) {
+        res.status(400).json({ success: false, message: 'You cannot initiate a conversation for your own property' });
+        return;
+      }
+
+      // Check if conversation already exists for this tenant and property
+      const existingConv = await prisma.conversation.findUnique({
+        where: {
+          propertyId_tenantId: {
+            propertyId: property.id,
+            tenantId: userId
+          }
+        },
+        include: {
+          property: {
+            select: {
+              id: true,
+              title: true,
+              locality: true,
+              city: true,
+              images: { take: 1, select: { url: true } }
+            }
+          },
+          tenant: { select: { id: true, name: true, email: true } },
+          owner: { select: { id: true, name: true, email: true } },
+          rentalRequest: { select: { id: true, status: true } }
+        }
+      });
+
+      if (existingConv) {
+        res.status(200).json({ success: true, data: existingConv });
+        return;
+      }
+
+      if (!property.isAvailable) {
+        res.status(400).json({ success: false, message: 'This property is currently rented and unavailable for new inquiries' });
+        return;
+      }
+
+      try {
+        const conversation = await prisma.conversation.create({
+          data: {
+            propertyId: property.id,
+            tenantId: userId,
+            ownerId: property.ownerId,
+            rentalRequestId: null
+          },
+          include: {
+            property: {
+              select: {
+                id: true,
+                title: true,
+                locality: true,
+                city: true,
+                images: { take: 1, select: { url: true } }
+              }
+            },
+            tenant: { select: { id: true, name: true, email: true } },
+            owner: { select: { id: true, name: true, email: true } },
+            rentalRequest: { select: { id: true, status: true } }
+          }
+        });
+
+        res.status(201).json({ success: true, data: conversation });
+        return;
+      } catch (err: any) {
+        // Concurrency protection: if a concurrent request created it in parallel, return the created one
+        if (err.code === 'P2002') {
+          const parallelConv = await prisma.conversation.findUnique({
+            where: {
+              propertyId_tenantId: {
+                propertyId: property.id,
+                tenantId: userId
+              }
+            },
+            include: {
+              property: {
+                select: {
+                  id: true,
+                  title: true,
+                  locality: true,
+                  city: true,
+                  images: { take: 1, select: { url: true } }
+                }
+              },
+              tenant: { select: { id: true, name: true, email: true } },
+              owner: { select: { id: true, name: true, email: true } },
+              rentalRequest: { select: { id: true, status: true } }
+            }
+          });
+          if (parallelConv) {
+            res.status(200).json({ success: true, data: parallelConv });
+            return;
+          }
+        }
+        throw err;
+      }
+    }
+
+    // 2. Rental request flow
+    if (rentalRequestId && typeof rentalRequestId === 'string') {
+      const rentalRequest = await prisma.rentalRequest.findUnique({
+        where: { id: rentalRequestId },
+        include: { property: true, conversation: true }
+      });
+
+      if (!rentalRequest) {
+        res.status(404).json({ success: false, message: 'Rental request not found' });
+        return;
+      }
+
+      if (rentalRequest.tenantId !== userId && rentalRequest.property.ownerId !== userId) {
+        res.status(403).json({ success: false, message: 'Forbidden' });
+        return;
+      }
+
+      if (rentalRequest.conversation) {
+        res.status(200).json({ success: true, data: rentalRequest.conversation });
+        return;
+      }
+
+      // Check if conversation already exists by [propertyId, tenantId]
+      const existingByPair = await prisma.conversation.findUnique({
+        where: {
+          propertyId_tenantId: {
+            propertyId: rentalRequest.propertyId,
+            tenantId: rentalRequest.tenantId
+          }
+        }
+      });
+
+      if (existingByPair) {
+        try {
+          const linked = await prisma.conversation.update({
+            where: { id: existingByPair.id },
+            data: { rentalRequestId }
+          });
+          res.status(200).json({ success: true, data: linked });
+          return;
+        } catch (err: any) {
+          if (err.code === 'P2002') {
+            const parallelConv = await prisma.conversation.findFirst({
+              where: {
+                OR: [
+                  { rentalRequestId },
+                  {
+                    propertyId: rentalRequest.propertyId,
+                    tenantId: rentalRequest.tenantId
+                  }
+                ]
+              }
+            });
+            if (parallelConv) {
+              res.status(200).json({ success: true, data: parallelConv });
+              return;
+            }
+          }
+          throw err;
+        }
+      }
+
+      try {
+        const conversation = await prisma.conversation.create({
+          data: {
+            rentalRequestId,
+            propertyId: rentalRequest.propertyId,
+            tenantId: rentalRequest.tenantId,
+            ownerId: rentalRequest.property.ownerId
+          }
+        });
+
+        res.status(201).json({ success: true, data: conversation });
+        return;
+      } catch (err: any) {
+        if (err.code === 'P2002') {
+          // Competing request created conversation in parallel: fetch and return existing conversation
+          const parallelConv = await prisma.conversation.findFirst({
+            where: {
+              OR: [
+                { rentalRequestId },
+                {
+                  propertyId: rentalRequest.propertyId,
+                  tenantId: rentalRequest.tenantId
+                }
+              ]
+            }
+          });
+          if (parallelConv) {
+            // If the parallel conversation was created without rentalRequestId (e.g. pre-rental race), link it
+            if (!parallelConv.rentalRequestId) {
+              try {
+                const linked = await prisma.conversation.update({
+                  where: { id: parallelConv.id },
+                  data: { rentalRequestId }
+                });
+                res.status(200).json({ success: true, data: linked });
+                return;
+              } catch (linkErr: any) {
+                if (linkErr.code === 'P2002') {
+                  const refreshed = await prisma.conversation.findUnique({
+                    where: { id: parallelConv.id }
+                  });
+                  if (refreshed) {
+                    res.status(200).json({ success: true, data: refreshed });
+                    return;
+                  }
+                }
+                throw linkErr;
+              }
+            }
+            res.status(200).json({ success: true, data: parallelConv });
+            return;
+          }
+        }
+        throw err;
+      }
+    }
+
+    res.status(400).json({ success: false, message: 'propertyId or rentalRequestId required' });
   } catch (error) {
     console.error('Error creating conversation:', error);
     res.status(500).json({ success: false, message: 'Internal server error' });

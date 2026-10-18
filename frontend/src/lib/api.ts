@@ -66,5 +66,6 @@ export const api = {
   get: <T>(endpoint: string, options?: FetchOptions) => apiRequest<T>(endpoint, { ...options, method: 'GET' }),
   post: <T>(endpoint: string, body: any, options?: FetchOptions) => apiRequest<T>(endpoint, { ...options, method: 'POST', body: JSON.stringify(body) }),
   put: <T>(endpoint: string, body: any, options?: FetchOptions) => apiRequest<T>(endpoint, { ...options, method: 'PUT', body: JSON.stringify(body) }),
+  patch: <T>(endpoint: string, body?: any, options?: FetchOptions) => apiRequest<T>(endpoint, { ...options, method: 'PATCH', body: body !== undefined ? JSON.stringify(body) : undefined }),
   delete: <T>(endpoint: string, options?: FetchOptions) => apiRequest<T>(endpoint, { ...options, method: 'DELETE' }),
 };

@@ -119,19 +119,20 @@ model RentalRequest {
 }
 
 model Conversation {
-  id              String        @id @default(uuid())
-  rentalRequestId String        @unique
+  id              String         @id @default(uuid())
+  rentalRequestId String?        @unique
   propertyId      String
   tenantId        String
   ownerId         String
-  createdAt       DateTime      @default(now())
-  updatedAt       DateTime      @updatedAt
-  owner           User          @relation("OwnerConversations", fields: [ownerId], references: [id], onDelete: Cascade)
-  property        Property      @relation(fields: [propertyId], references: [id], onDelete: Cascade)
-  rentalRequest   RentalRequest @relation(fields: [rentalRequestId], references: [id], onDelete: Cascade)
-  tenant          User          @relation("TenantConversations", fields: [tenantId], references: [id], onDelete: Cascade)
+  createdAt       DateTime       @default(now())
+  updatedAt       DateTime       @updatedAt
+  owner           User           @relation("OwnerConversations", fields: [ownerId], references: [id], onDelete: Cascade)
+  property        Property       @relation(fields: [propertyId], references: [id], onDelete: Cascade)
+  rentalRequest   RentalRequest? @relation(fields: [rentalRequestId], references: [id], onDelete: SetNull)
+  tenant          User           @relation("TenantConversations", fields: [tenantId], references: [id], onDelete: Cascade)
   messages        Message[]
 
+  @@unique([propertyId, tenantId])
   @@index([tenantId])
   @@index([ownerId])
   @@index([propertyId])

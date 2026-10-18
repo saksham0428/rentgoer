@@ -71,7 +71,7 @@ export default function ChatListPage() {
             </h2>
 
             <p className="text-sm text-muted mb-6 leading-relaxed">
-              Connect directly with {isTenant ? 'property owners' : 'tenants'} for accepted rental requests. Coordinate move-in dates, terms, and agreements in a safe, verified channel.
+              Connect directly with {isTenant ? 'property owners' : 'tenants'} to discuss properties, ask questions, and coordinate rental agreements in a safe, verified channel.
             </p>
 
             <div className="flex items-center gap-2 text-xs text-muted/80 bg-muted/20 px-3.5 py-2 rounded-full mb-8 border border-border">

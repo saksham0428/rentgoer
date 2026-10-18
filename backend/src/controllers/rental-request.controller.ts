@@ -212,99 +212,150 @@ export const acceptRequest = async (req: Request, res: Response): Promise<void> 
     let notificationToEmit: any = null;
     let otherNotificationsToEmit: any[] = [];
     
-    const result = await prisma.$transaction(async (tx) => {
-      const request = await tx.rentalRequest.findUnique({
-        where: { id: requestId },
-        include: { property: true }
-      });
+    // Concurrency resilience: if pre-rental conversation creation races with acceptance,
+    // retry the acceptance transaction with fresh state to link the existing conversation
+    // and preserve message history.
+    const maxRetries = 3;
+    let attempt = 0;
+    let result: any = null;
 
-      if (!request) {
-        throw new Error('NOT_FOUND');
-      }
+    while (attempt < maxRetries) {
+      attempt++;
+      try {
+        result = await prisma.$transaction(async (tx) => {
+          const request = await tx.rentalRequest.findUnique({
+            where: { id: requestId },
+            include: { property: true }
+          });
 
-      if (request.property.ownerId !== ownerId) {
-        throw new Error('FORBIDDEN');
-      }
+          if (!request) {
+            throw new Error('NOT_FOUND');
+          }
 
-      if (request.status !== 'PENDING') {
-        throw new Error('CONFLICT_STATUS');
-      }
+          if (request.property.ownerId !== ownerId) {
+            throw new Error('FORBIDDEN');
+          }
 
-      if (!request.property.isAvailable) {
-        throw new Error('CONFLICT_AVAILABILITY');
-      }
+          if (request.status !== 'PENDING') {
+            throw new Error('CONFLICT_STATUS');
+          }
 
-      // 1. Atomically mark property as unavailable FIRST.
-      // Locking the parent Property row first establishes a consistent lock ordering across transactions,
-      // preventing deadlocks when concurrent acceptances occur for the same property.
-      const updatePropResult = await tx.property.updateMany({
-        where: {
-          id: request.propertyId,
-          isAvailable: true
-        },
-        data: {
-          isAvailable: false
+          if (!request.property.isAvailable) {
+            throw new Error('CONFLICT_AVAILABILITY');
+          }
+
+          // 1. Atomically mark property as unavailable FIRST.
+          // Locking the parent Property row first establishes a consistent lock ordering across transactions,
+          // preventing deadlocks when concurrent acceptances occur for the same property.
+          const updatePropResult = await tx.property.updateMany({
+            where: {
+              id: request.propertyId,
+              isAvailable: true
+            },
+            data: {
+              isAvailable: false
+            }
+          });
+
+          if (updatePropResult.count === 0) {
+            throw new Error('CONFLICT_AVAILABILITY');
+          }
+
+          // 2. Mark request as ACCEPTED atomically
+          const updateReqResult = await tx.rentalRequest.updateMany({
+            where: {
+              id: requestId,
+              status: 'PENDING'
+            },
+            data: {
+              status: 'ACCEPTED'
+            }
+          });
+
+          if (updateReqResult.count === 0) {
+            throw new Error('CONFLICT_STATUS');
+          }
+
+          // 3. Mark all other PENDING requests for this property as REJECTED
+          const otherRequests = await tx.rentalRequest.findMany({
+            where: {
+              propertyId: request.propertyId,
+              status: 'PENDING',
+              id: { not: requestId }
+            }
+          });
+
+          if (otherRequests.length > 0) {
+            await tx.rentalRequest.updateMany({
+              where: {
+                propertyId: request.propertyId,
+                status: 'PENDING',
+                id: { not: requestId }
+              },
+              data: { status: 'REJECTED' }
+            });
+          }
+
+          // 4. Link existing pre-rental conversation or create conversation atomically
+          // Check for any existing conversation by [propertyId, tenantId] or by rentalRequestId
+          const existingConv = await tx.conversation.findFirst({
+            where: {
+              OR: [
+                {
+                  propertyId: request.propertyId,
+                  tenantId: request.tenantId
+                },
+                {
+                  rentalRequestId: requestId
+                }
+              ]
+            }
+          });
+
+          if (existingConv) {
+            // Update existing conversation in-place to preserve conversation ID and message history
+            await tx.conversation.update({
+              where: { id: existingConv.id },
+              data: {
+                rentalRequestId: requestId,
+                ownerId: request.property.ownerId
+              }
+            });
+          } else {
+            await tx.conversation.create({
+              data: {
+                rentalRequestId: requestId,
+                propertyId: request.propertyId,
+                tenantId: request.tenantId,
+                ownerId: request.property.ownerId
+              }
+            });
+          }
+
+          const acceptedRequest = await tx.rentalRequest.findUnique({
+            where: { id: requestId },
+            include: { property: true, conversation: true }
+          });
+
+          return { acceptedRequest, request, otherRequests };
+        }, { timeout: 15000, maxWait: 10000 });
+
+        // Succeeded: exit retry loop
+        break;
+      } catch (err: any) {
+        const isRetryable =
+          err.code === 'P2002' ||
+          err.code === 'P2034' ||
+          (typeof err.message === 'string' && (err.message.includes('deadlock detected') || err.message.includes('40P01')));
+
+        if (isRetryable && attempt < maxRetries) {
+          // Brief backoff before retry to allow competing transaction to settle
+          await new Promise((resolve) => setTimeout(resolve, 50 * attempt));
+          continue;
         }
-      });
-
-      if (updatePropResult.count === 0) {
-        throw new Error('CONFLICT_AVAILABILITY');
+        throw err;
       }
-
-      // 2. Mark request as ACCEPTED atomically
-      const updateReqResult = await tx.rentalRequest.updateMany({
-        where: {
-          id: requestId,
-          status: 'PENDING'
-        },
-        data: {
-          status: 'ACCEPTED'
-        }
-      });
-
-      if (updateReqResult.count === 0) {
-        throw new Error('CONFLICT_STATUS');
-      }
-
-      // 3. Mark all other PENDING requests for this property as REJECTED
-      const otherRequests = await tx.rentalRequest.findMany({
-        where: {
-          propertyId: request.propertyId,
-          status: 'PENDING',
-          id: { not: requestId }
-        }
-      });
-
-      if (otherRequests.length > 0) {
-        await tx.rentalRequest.updateMany({
-          where: {
-            propertyId: request.propertyId,
-            status: 'PENDING',
-            id: { not: requestId }
-          },
-          data: { status: 'REJECTED' }
-        });
-      }
-
-      // 4. Create Conversation atomically via upsert (guarantees exactly one conversation exists)
-      await tx.conversation.upsert({
-        where: { rentalRequestId: requestId },
-        update: {},
-        create: {
-          rentalRequestId: requestId,
-          propertyId: request.propertyId,
-          tenantId: request.tenantId,
-          ownerId: request.property.ownerId
-        }
-      });
-
-      const acceptedRequest = await tx.rentalRequest.findUnique({
-        where: { id: requestId },
-        include: { property: true, conversation: true }
-      });
-
-      return { acceptedRequest, request, otherRequests };
-    }, { timeout: 15000, maxWait: 10000 });
+    }
 
     const { acceptedRequest, request, otherRequests } = result;
 
@@ -321,7 +372,7 @@ export const acceptRequest = async (req: Request, res: Response): Promise<void> 
       });
 
       if (otherRequests.length > 0) {
-        const rejectedNotificationsData = otherRequests.map(otherReq => ({
+        const rejectedNotificationsData = otherRequests.map((otherReq: any) => ({
           userId: otherReq.tenantId,
           type: 'REQUEST_REJECTED' as const,
           title: 'Request Rejected',

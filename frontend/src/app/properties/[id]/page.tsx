@@ -7,6 +7,7 @@ import { api } from '@/lib/api';
 import { ImageGallery } from '@/components/property/ImageGallery';
 import { FavoriteButton } from '@/components/property/FavoriteButton';
 import { RentalRequestForm } from '@/components/property/RentalRequestForm';
+import { ChatWithOwnerButton } from '@/components/property/ChatWithOwnerButton';
 import { PropertyReviews } from '@/components/property/PropertyReviews';
 import { ReportPropertyButton } from '@/components/report/ReportPropertyButton';
 
@@ -189,6 +190,16 @@ export default async function PropertyDetailsPage({ params }: PageProps) {
                 </span>
               </div>
             </div>
+
+            {property.isAvailable && (
+              <div className="mb-4">
+                <ChatWithOwnerButton
+                  propertyId={property.id}
+                  ownerId={property.ownerId}
+                  isAvailable={property.isAvailable}
+                />
+              </div>
+            )}
 
             {property.isAvailable ? (
               <RentalRequestForm propertyId={property.id} />

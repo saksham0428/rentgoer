@@ -27,12 +27,14 @@ export const useUnreadChatCount = () => {
   useEffect(() => {
     fetchUnreadCount();
 
-    // Listen to storage/focus events to refresh unread count when returning to tab
-    const handleFocus = () => fetchUnreadCount();
-    window.addEventListener('focus', handleFocus);
+    // Listen to focus and custom sync events to refresh unread count immediately
+    const handleSync = () => fetchUnreadCount();
+    window.addEventListener('focus', handleSync);
+    window.addEventListener('chat:unread_sync', handleSync);
 
     return () => {
-      window.removeEventListener('focus', handleFocus);
+      window.removeEventListener('focus', handleSync);
+      window.removeEventListener('chat:unread_sync', handleSync);
     };
   }, [fetchUnreadCount]);
 

@@ -10,7 +10,10 @@
     "admin:provision": "tsx src/scripts/provision-admin.ts",
     "admin:provision:dist": "node dist/scripts/provision-admin.js",
     "test:provision": "tsx scratch/test-hardened-provisioning-unit.ts",
-    "test:chat": "tsx scratch/test-chat-unit.ts"
+    "test:chat": "tsx scratch/test-chat-unit.ts",
+    "test:notif-sync": "tsx scratch/test-notification-sync-unit.ts",
+    "test:pre-rental": "tsx scratch/test-pre-rental-chat-unit.ts",
+    "test:concurrency": "tsx scratch/test-concurrency-controllers.ts"
   },
   "keywords": [],
   "author": "",

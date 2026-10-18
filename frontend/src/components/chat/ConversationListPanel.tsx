@@ -152,7 +152,7 @@ export const ConversationListPanel: React.FC<ConversationListPanelProps> = ({
             </div>
             <h3 className="font-bold text-foreground text-sm mb-1">No conversations yet</h3>
             <p className="text-xs text-muted mb-4 max-w-xs leading-relaxed">
-              When a rental request is accepted, your chat will automatically appear here.
+              When you message an owner or a rental request is accepted, your conversations will appear here.
             </p>
             <div className="flex flex-col gap-2 w-full max-w-xs">
               <Link href={isTenant ? '/rental-requests' : '/owner/requests'}>

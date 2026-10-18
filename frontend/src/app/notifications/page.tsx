@@ -2,7 +2,7 @@
 /* eslint-disable react/no-unescaped-entities */
 'use client';
 
-import React from 'react';
+import React, { useEffect } from 'react';
 import { useNotifications } from '@/context/NotificationContext';
 import { useAuth } from '@/context/AuthContext';
 import { Button } from '@/components/ui/Button';
@@ -12,8 +12,14 @@ import { useRouter } from 'next/navigation';
 
 export default function NotificationsPage() {
   const { user, loading: authLoading } = useAuth();
-  const { notifications, unreadCount, markAsRead, markAllAsRead } = useNotifications();
+  const { notifications, unreadCount, markAsRead, markAllAsRead, fetchNotifications } = useNotifications();
   const router = useRouter();
+
+  useEffect(() => {
+    if (user) {
+      fetchNotifications();
+    }
+  }, [user, fetchNotifications]);
 
   if (authLoading) return <div className="p-8 text-center text-muted">Loading...</div>;
   if (!user) {
