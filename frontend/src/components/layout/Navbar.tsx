@@ -24,16 +24,13 @@ import {
 import { useAuth } from '@/context/AuthContext';
 import { useNotifications } from '@/context/NotificationContext';
 import { useFavorites } from '@/context/FavoritesContext';
-import { useUnreadChatCount } from '@/hooks/useUnreadChatCount';
 import { ProfileDropdown } from './ProfileDropdown';
 
 export const Navbar = () => {
   const [isOpen, setIsOpen] = useState(false);
   const { user, loading, logout } = useAuth();
-  const { unreadCount } = useNotifications();
-  const { unreadChatCount } = useUnreadChatCount();
-  const { favoriteIds } = useFavorites();
-  const favoriteCount = favoriteIds.length;
+  const { unreadCount, unreadChatCount } = useNotifications();
+  const { favoriteCount } = useFavorites();
   const pathname = usePathname();
 
   const toggleMenu = () => setIsOpen(!isOpen);

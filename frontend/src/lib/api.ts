@@ -8,6 +8,9 @@ interface FetchOptions extends RequestInit {
   params?: Record<string, any>;
 }
 
+// In-flight request deduplication map for client-side GET requests
+const inFlightGetRequests = new Map<string, Promise<any>>();
+
 async function apiRequest<T>(endpoint: string, options: FetchOptions = {}): Promise<T> {
   const { params, headers, ...customConfig } = options;
 
@@ -26,8 +29,19 @@ async function apiRequest<T>(endpoint: string, options: FetchOptions = {}): Prom
     }
   }
 
+  const method = (customConfig.method || 'GET').toUpperCase();
+
+  // Deduplicate concurrent client-side GET requests to identical URLs
+  if (!isServer && method === 'GET') {
+    const existingPromise = inFlightGetRequests.get(url);
+    if (existingPromise) {
+      return existingPromise as Promise<T>;
+    }
+  }
+
   const config: RequestInit = {
     ...customConfig,
+    method,
     headers: {
       'Content-Type': 'application/json',
       ...headers,
@@ -52,14 +66,30 @@ async function apiRequest<T>(endpoint: string, options: FetchOptions = {}): Prom
     }
   }
 
-  const response = await fetch(url, config);
-  const data = await response.json();
+  const execute = async (): Promise<T> => {
+    try {
+      const response = await fetch(url, config);
+      const data = await response.json();
 
-  if (!response.ok) {
-    throw new Error(data.message || 'An error occurred during the request.');
+      if (!response.ok) {
+        throw new Error(data.message || 'An error occurred during the request.');
+      }
+
+      return data as T;
+    } finally {
+      if (!isServer && method === 'GET') {
+        inFlightGetRequests.delete(url);
+      }
+    }
+  };
+
+  if (!isServer && method === 'GET') {
+    const promise = execute();
+    inFlightGetRequests.set(url, promise);
+    return promise;
   }
 
-  return data;
+  return execute();
 }
 
 export const api = {

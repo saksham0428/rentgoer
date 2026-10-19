@@ -28,7 +28,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const [loading, setLoading] = useState(true);
   const router = useRouter();
 
-  const fetchUser = useCallback(async () => {
+  const refreshUser = useCallback(async () => {
     try {
       const res = await api.get<{ success: boolean; user: User }>('/auth/me');
       if (res.success && res.user) {
@@ -44,8 +44,33 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   }, []);
 
   useEffect(() => {
-    fetchUser();
-  }, [fetchUser]);
+    let isCancelled = false;
+
+    (async () => {
+      try {
+        const res = await api.get<{ success: boolean; user: User }>('/auth/me');
+        if (!isCancelled) {
+          if (res.success && res.user) {
+            setUser(res.user);
+          } else {
+            setUser(null);
+          }
+        }
+      } catch {
+        if (!isCancelled) {
+          setUser(null);
+        }
+      } finally {
+        if (!isCancelled) {
+          setLoading(false);
+        }
+      }
+    })();
+
+    return () => {
+      isCancelled = true;
+    };
+  }, []);
 
   const logout = useCallback(async () => {
     try {
@@ -62,9 +87,9 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const contextValue = useMemo(() => ({
     user,
     loading,
-    refreshUser: fetchUser,
+    refreshUser,
     logout,
-  }), [user, loading, fetchUser, logout]);
+  }), [user, loading, refreshUser, logout]);
 
   return (
     <AuthContext.Provider value={contextValue}>
