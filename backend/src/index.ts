@@ -25,8 +25,12 @@ import messageRoutes from './routes/message.routes';
 
 import { errorHandler } from './middleware/error.middleware';
 import { prisma } from './lib/prisma';
+import { validateAuthConfigAtStartup } from './config/auth.config';
 
 dotenv.config();
+
+// Validate critical authentication and session configuration at startup
+validateAuthConfigAtStartup();
 
 const app = express();
 const PORT = process.env.PORT || 5000;

@@ -14,7 +14,10 @@
     "test:notif-sync": "tsx scratch/test-notification-sync-unit.ts",
     "test:pre-rental": "tsx scratch/test-pre-rental-chat-unit.ts",
     "test:concurrency": "tsx scratch/test-concurrency-controllers.ts",
-    "test:properties": "tsx scratch/test-properties-optimization.ts"
+    "test:properties": "tsx scratch/test-properties-optimization.ts",
+    "test:session:unit": "tsx scratch/test-session-auth-unit.ts",
+    "test:session:integration": "tsx scratch/test-session-postgres-integration.ts",
+    "auth:cleanup": "tsx src/scripts/cleanup-sessions.ts"
   },
   "keywords": [],
   "author": "",

@@ -1,16 +1,51 @@
 import { Request, Response } from 'express';
 import bcrypt from 'bcrypt';
 import jwt from 'jsonwebtoken';
+import crypto from 'crypto';
 import { prisma } from '../lib/prisma';
 import { Role } from '@prisma/client';
+import { isSessionIssuanceEnabled } from '../config/auth.config';
 
-const generateTokenAndSetCookie = (res: Response, userId: string, role: Role, tokenVersion: number) => {
+const extractUserAgent = (req: Request): string | null => {
+  const raw = req.headers['user-agent'];
+  if (!raw) return null;
+  return String(raw).slice(0, 500);
+};
+
+const extractIpAddress = (req: Request): string | null => {
+  const forwarded = req.headers['x-forwarded-for'];
+  if (forwarded) {
+    const first = (typeof forwarded === 'string' ? forwarded : forwarded[0]).split(',')[0].trim();
+    if (first) return first.slice(0, 45);
+  }
+  const ip = req.ip || req.socket?.remoteAddress;
+  return ip ? String(ip).slice(0, 45) : null;
+};
+
+const generateTokenAndSetCookie = (
+  res: Response,
+  userId: string,
+  role: Role,
+  tokenVersion: number,
+  sessionId?: string
+) => {
   const secret = process.env.JWT_SECRET;
   if (!secret) {
     throw new Error('JWT_SECRET is not configured');
   }
 
-  const token = jwt.sign({ id: userId, role, tokenVersion }, secret, { expiresIn: '7d' });
+  const payload: {
+    id: string;
+    role: Role;
+    tokenVersion: number;
+    sessionId?: string;
+  } = { id: userId, role, tokenVersion };
+
+  if (sessionId) {
+    payload.sessionId = sessionId;
+  }
+
+  const token = jwt.sign(payload, secret, { expiresIn: '7d' });
 
   const isProduction = process.env.NODE_ENV === 'production';
 
@@ -69,25 +104,53 @@ export const register = async (req: Request, res: Response): Promise<void> => {
     const saltRounds = 10;
     const passwordHash = await bcrypt.hash(password, saltRounds);
 
-    // Create user
-    const user = await prisma.user.create({
-      data: {
-        name,
-        email: normalizedEmail,
-        passwordHash,
-        role: role as Role,
-      },
-      select: {
-        id: true,
-        name: true,
-        email: true,
-        role: true,
-        tokenVersion: true,
-        createdAt: true,
+    // Create user (and session if session issuance is enabled) atomically
+    const sessionExpiry = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
+    const userAgent = extractUserAgent(req);
+    const ipAddress = extractIpAddress(req);
+    const sessionEnabled = isSessionIssuanceEnabled();
+
+    const { user, session } = await prisma.$transaction(async (tx) => {
+      const newUser = await tx.user.create({
+        data: {
+          name,
+          email: normalizedEmail,
+          passwordHash,
+          role: role as Role,
+        },
+        select: {
+          id: true,
+          name: true,
+          email: true,
+          role: true,
+          tokenVersion: true,
+          createdAt: true,
+        },
+      });
+
+      let newSession: { id: string } | null = null;
+      if (sessionEnabled) {
+        newSession = await tx.session.create({
+          data: {
+            userId: newUser.id,
+            expiresAt: sessionExpiry,
+            userAgent,
+            ipAddress,
+          },
+          select: { id: true },
+        });
       }
+
+      return { user: newUser, session: newSession };
     });
 
-    generateTokenAndSetCookie(res, user.id, user.role, user.tokenVersion);
+    generateTokenAndSetCookie(
+      res,
+      user.id,
+      user.role,
+      user.tokenVersion,
+      session ? session.id : undefined
+    );
 
     res.status(201).json({
       success: true,
@@ -127,7 +190,31 @@ export const login = async (req: Request, res: Response): Promise<void> => {
       return;
     }
 
-    generateTokenAndSetCookie(res, user.id, user.role, user.tokenVersion);
+    const sessionExpiry = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
+    const userAgent = extractUserAgent(req);
+    const ipAddress = extractIpAddress(req);
+    const sessionEnabled = isSessionIssuanceEnabled();
+
+    let session: { id: string } | null = null;
+    if (sessionEnabled) {
+      session = await prisma.session.create({
+        data: {
+          userId: user.id,
+          expiresAt: sessionExpiry,
+          userAgent,
+          ipAddress,
+        },
+        select: { id: true },
+      });
+    }
+
+    generateTokenAndSetCookie(
+      res,
+      user.id,
+      user.role,
+      user.tokenVersion,
+      session ? session.id : undefined
+    );
 
     res.status(200).json({
       success: true,
@@ -148,17 +235,75 @@ export const login = async (req: Request, res: Response): Promise<void> => {
   }
 };
 
-export const logout = (req: Request, res: Response): void => {
-  res.clearCookie('rentgoer_token', {
-    httpOnly: true,
-    secure: process.env.NODE_ENV === 'production',
-    sameSite: 'lax',
-  });
+export const logout = async (req: Request, res: Response): Promise<void> => {
+  try {
+    const token = req.cookies?.rentgoer_token;
+    if (token && typeof token === 'string') {
+      const secret = process.env.JWT_SECRET;
+      if (secret) {
+        try {
+          const decoded = jwt.verify(token, secret) as {
+            id?: string;
+            role?: Role;
+            tokenVersion?: number;
+            sessionId?: string;
+            exp?: number;
+          };
 
-  res.status(200).json({
-    success: true,
-    message: 'Logged out successfully',
-  });
+          if (decoded && decoded.id) {
+            if ('sessionId' in decoded) {
+              if (typeof decoded.sessionId === 'string' && decoded.sessionId.trim()) {
+                // Session-aware token: Revoke only this exact session, ensuring userId matches
+                await prisma.session.updateMany({
+                  where: {
+                    id: decoded.sessionId,
+                    userId: decoded.id,
+                    revokedAt: null,
+                  },
+                  data: {
+                    revokedAt: new Date(),
+                  },
+                });
+              }
+            } else if (decoded.exp && typeof decoded.exp === 'number') {
+              // Legacy token without sessionId:
+              // Hash raw token with SHA-256 (never store plaintext JWT)
+              const tokenHash = crypto.createHash('sha256').update(token).digest('hex');
+              const expiresAt = new Date(decoded.exp * 1000);
+
+              // Idempotent upsert to safely handle repeated/concurrent logouts
+              await prisma.revokedLegacyToken.upsert({
+                where: { tokenHash },
+                update: {},
+                create: {
+                  tokenHash,
+                  userId: decoded.id,
+                  expiresAt,
+                },
+              });
+            }
+          }
+        } catch {
+          // If token verification fails (expired, malformed, invalid signature),
+          // do NOT perform any database mutation. We fail safely and proceed to clear the cookie.
+        }
+      }
+    }
+  } catch (error) {
+    console.error('Logout error during session revocation:', error);
+    // Proceed to clear client cookie even if DB fails
+  } finally {
+    res.clearCookie('rentgoer_token', {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'lax',
+    });
+
+    res.status(200).json({
+      success: true,
+      message: 'Logged out successfully',
+    });
+  }
 };
 
 export const getMe = async (req: Request, res: Response): Promise<void> => {
@@ -307,14 +452,20 @@ export const changePassword = async (req: Request, res: Response): Promise<void>
     const saltRounds = 10;
     const newPasswordHash = await bcrypt.hash(newPassword, saltRounds);
 
-    // Atomically update password hash and increment tokenVersion to revoke all active sessions
-    await prisma.user.update({
-      where: { id: userId },
-      data: {
-        passwordHash: newPasswordHash,
-        tokenVersion: { increment: 1 },
-      },
-    });
+    // Atomically update password hash, increment tokenVersion, and revoke all active sessions for this user
+    await prisma.$transaction([
+      prisma.user.update({
+        where: { id: userId },
+        data: {
+          passwordHash: newPasswordHash,
+          tokenVersion: { increment: 1 },
+        },
+      }),
+      prisma.session.updateMany({
+        where: { userId, revokedAt: null },
+        data: { revokedAt: new Date() },
+      }),
+    ]);
 
     // Invalidate the current browser's authentication cookie so re-login is required
     res.clearCookie('rentgoer_token', {
@@ -400,27 +551,63 @@ export const changeEmail = async (req: Request, res: Response): Promise<void> =>
       return;
     }
 
-    // Atomically update email and increment tokenVersion to revoke old sessions on other devices
-    const updatedUser = await prisma.user.update({
-      where: { id: userId },
-      data: {
-        email: normalizedEmail,
-        tokenVersion: { increment: 1 },
-      },
-      select: {
-        id: true,
-        name: true,
-        email: true,
-        role: true,
-        phone: true,
-        isVerified: true,
-        createdAt: true,
-        tokenVersion: true,
-      },
+    const sessionExpiry = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
+    const userAgent = extractUserAgent(req);
+    const ipAddress = extractIpAddress(req);
+    const sessionEnabled = isSessionIssuanceEnabled();
+
+    // Atomically invalidate old sessions, update email, increment tokenVersion, and create replacement session
+    const { updatedUser, newSession } = await prisma.$transaction(async (tx) => {
+      // 1. Invalidate all prior active sessions for this user
+      await tx.session.updateMany({
+        where: { userId, revokedAt: null },
+        data: { revokedAt: new Date() },
+      });
+
+      // 2. Update email and increment tokenVersion
+      const user = await tx.user.update({
+        where: { id: userId },
+        data: {
+          email: normalizedEmail,
+          tokenVersion: { increment: 1 },
+        },
+        select: {
+          id: true,
+          name: true,
+          email: true,
+          role: true,
+          phone: true,
+          isVerified: true,
+          createdAt: true,
+          tokenVersion: true,
+        },
+      });
+
+      // 3. Create replacement session for the active client if session issuance is enabled
+      let replacementSession: { id: string } | null = null;
+      if (sessionEnabled) {
+        replacementSession = await tx.session.create({
+          data: {
+            userId: user.id,
+            expiresAt: sessionExpiry,
+            userAgent,
+            ipAddress,
+          },
+          select: { id: true },
+        });
+      }
+
+      return { updatedUser: user, newSession: replacementSession };
     });
 
-    // Re-issue cookie with updated tokenVersion for the active session (7 days)
-    generateTokenAndSetCookie(res, updatedUser.id, updatedUser.role, updatedUser.tokenVersion);
+    // Re-issue cookie with updated tokenVersion (and new sessionId if Stage B)
+    generateTokenAndSetCookie(
+      res,
+      updatedUser.id,
+      updatedUser.role,
+      updatedUser.tokenVersion,
+      newSession ? newSession.id : undefined
+    );
 
     res.status(200).json({
       success: true,

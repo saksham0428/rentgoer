@@ -27,6 +27,8 @@ model User {
   rentalRequests      RentalRequest[] @relation("TenantRequests")
   tenantReviews       Review[]        @relation("TenantReviews")
   reports             Report[]        @relation("UserReports")
+  sessions            Session[]
+  revokedLegacyTokens RevokedLegacyToken[]
 
   // Milestone 14 Verification fields
   isVerified            Boolean               @default(false)
@@ -305,4 +307,31 @@ enum VerificationStatus {
   PENDING
   APPROVED
   REJECTED
+}
+
+model Session {
+  id        String    @id @default(uuid())
+  userId    String
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userAgent String?
+  ipAddress String?
+  revokedAt DateTime?
+  expiresAt DateTime
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+
+  @@index([userId, revokedAt])
+  @@index([expiresAt])
+}
+
+model RevokedLegacyToken {
+  id        String   @id @default(uuid())
+  tokenHash String   @unique
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+
+  @@index([tokenHash])
+  @@index([expiresAt])
 }
