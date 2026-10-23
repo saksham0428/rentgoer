@@ -7,6 +7,9 @@
     "start": "node dist/index.js",
     "dev": "tsx watch src/index.ts",
     "build": "tsc",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:integration": "vitest run --config vitest.integration.config.mts",
     "admin:provision": "tsx src/scripts/provision-admin.ts",
     "admin:provision:dist": "node dist/scripts/provision-admin.js",
     "test:provision": "tsx scratch/test-hardened-provisioning-unit.ts",
@@ -26,6 +29,15 @@
   "dependencies": {
     "@prisma/client": "^6.19.3",
     "@supabase/supabase-js": "^2.117.3",
+    "@types/bcrypt": "^6.0.0",
+    "@types/cookie-parser": "^1.4.10",
+    "@types/cors": "^2.8.19",
+    "@types/express": "^5.0.6",
+    "@types/jsonwebtoken": "^9.0.10",
+    "@types/mime-types": "^3.0.1",
+    "@types/multer": "^2.3.0",
+    "@types/node": "^26.6.4",
+    "@types/uuid": "^10.0.0",
     "bcrypt": "^6.0.0",
     "cookie-parser": "^1.4.7",
     "cors": "^2.8.6",
@@ -36,18 +48,9 @@
     "jsonwebtoken": "^9.0.3",
     "mime-types": "^3.0.2",
     "multer": "^2.4.0",
-    "uuid": "^14.0.2",
-    "@types/bcrypt": "^6.0.0",
-    "@types/cookie-parser": "^1.4.10",
-    "@types/cors": "^2.8.19",
-    "@types/express": "^5.0.6",
-    "@types/jsonwebtoken": "^9.0.10",
-    "@types/mime-types": "^3.0.1",
-    "@types/multer": "^2.3.0",
-    "@types/node": "^26.6.4",
-    "@types/uuid": "^10.0.0",
+    "prisma": "^6.19.3",
     "typescript": "^7.0.2",
-    "prisma": "^6.19.3"
+    "uuid": "^14.0.2"
   },
   "devDependencies": {
     "@types/eventsource": "^1.1.15",
@@ -56,6 +59,7 @@
     "eventsource": "^5.1.2",
     "form-data": "^4.0.6",
     "node-fetch": "^2.7.0",
-    "tsx": "^4.23.15"
+    "tsx": "^4.23.15",
+    "vitest": "^5.0.5"
   }
 }
