@@ -9,9 +9,11 @@
 - [x] Separate unit and integration tests from scratch/diagnostic scripts into `backend/tests/` (`backend/tests/unit/` 12 files / 196 tests, `backend/tests/integration/` 3 files / 17 tests)
 - [x] Ensure integration tests use an isolated test database and never production `DATABASE_URL` (`backend/.env.test.local` isolated config and `test-db-guard.ts` fail-closed verification)
 - [x] Add test cleanup/rollback guarantees and explicit environment guards (`ScopedTestContext` non-destructive entity tracking and fail-closed loopback guards)
+- [x] Establish frontend test runner and component smoke test suite (Vitest + React Testing Library + jsdom in `frontend/tests/components/` with 3 files / 22 tests passing)
+- [x] Add frontend feature component tests for authentication, property filters, and favorites (`frontend/tests/` 8 files / 60 tests passing across auth, filters, favorites, and UI components)
 
 ## Remaining
-- [ ] Add frontend component tests for authentication, filters, favorites, and realtime hooks (0 currently exist)
+- [ ] Add frontend tests for realtime chat and notification hooks (`useConversationRealtime.ts`, SSE connection and polling fallback — Phase 4C)
 - [ ] Add Playwright end-to-end smoke workflows for tenant and owner journeys (0 currently exist)
 - [ ] Add GitHub Actions CI for lint, typecheck, and safe automated tests (`.github/workflows` not yet created)
 - [ ] Add coverage reporting and establish a baseline
