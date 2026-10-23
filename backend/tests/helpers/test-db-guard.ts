@@ -34,6 +34,22 @@ const FORBIDDEN_CLOUD_DOMAINS = [
 const STRICT_LOCAL_HOSTS = ['localhost', '127.0.0.1', '::1', '[::1]'];
 
 /**
+ * Strictly verifies whether an IPv4 address is in 127.0.0.0/8 (127.0.0.0 to 127.255.255.255)
+ */
+export function isLoopbackIPv4(ip: string): boolean {
+  const parts = ip.split('.');
+  if (parts.length !== 4) return false;
+  if (parts[0] !== '127') return false;
+  for (let i = 1; i < 4; i++) {
+    const num = Number(parts[i]);
+    if (isNaN(num) || num < 0 || num > 255 || parts[i] !== String(num)) {
+      return false;
+    }
+  }
+  return true;
+}
+
+/**
  * Strictly verifies whether a hostname represents a valid loopback address:
  * - 'localhost'
  * - IPv4 in 127.0.0.0/8 (127.0.0.1 through 127.255.255.255)
@@ -50,9 +66,7 @@ export function isStrictLoopbackHost(hostname: string): boolean {
     return true;
   }
 
-  // Strict IPv4 loopback: 127.0.0.0/8 (127.0.0.0 to 127.255.255.255)
-  const ipv4LoopbackRegex = /^127\.(?:25[0-5]|2[0-4][0-9]|1[0-9]{2}|[1-9]?[0-9])\.(?:25[0-5]|2[0-4][0-9]|1[0-9]{2}|[1-9]?[0-9])\.(?:25[0-5]|2[0-4][0-9]|1[0-9]{2}|[1-9]?[0-9])$/;
-  return ipv4LoopbackRegex.test(normalized);
+  return isLoopbackIPv4(normalized);
 }
 
 /**
@@ -203,6 +217,7 @@ export function applyTestEnvironment(envFilePath?: string): {
   databaseUrl: string;
   directUrl?: string;
   target: SanitizedDbTarget;
+} {
   const config = loadAndValidateTestEnvironment(envFilePath);
   process.env.DATABASE_URL = config.databaseUrl;
   if (config.directUrl) {
@@ -212,6 +227,7 @@ export function applyTestEnvironment(envFilePath?: string): {
   return config;
 }
 
+/**
  * Validates that the runtime PostgreSQL server address (inet_server_addr)
  * returned by PostgreSQL is strictly a local loopback interface (Fix 1).
  * - Accepts IPv4 loopback in 127.0.0.0/8 (e.g. '127.0.0.1', '127.0.0.1/32').
@@ -248,8 +264,7 @@ export function validateRuntimeServerAddress(
   }
 
   // IPv4 Loopback in 127.0.0.0/8 (127.0.0.0 to 127.255.255.255)
-  const ipv4LoopbackRegex = /^127\.(?:25[0-5]|2[0-4][0-9]|1[0-9]{2}|[1-9]?[0-9])\.(?:25[0-5]|2[0-4][0-9]|1[0-9]{2}|[1-9]?[0-9])$/;
-  if (ipv4LoopbackRegex.test(cleanAddr)) {
+  if (isLoopbackIPv4(cleanAddr)) {
     return true;
   }
 

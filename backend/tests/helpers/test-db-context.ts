@@ -3,6 +3,7 @@ import {
   applyTestEnvironment,
   sanitizeErrorMessage,
   SanitizedDbTarget,
+  isLoopbackIPv4,
 } from './test-db-guard';
 
 /**
@@ -58,8 +59,7 @@ export function validateRuntimeServerAddress(
   }
 
   // IPv4 Loopback in 127.0.0.0/8 (127.0.0.0 to 127.255.255.255)
-  const ipv4LoopbackRegex = /^127\.(?:25[0-5]|2[0-4][0-9]|1[0-9]{2}|[1-9]?[0-9])\.(?:25[0-5]|2[0-4][0-9]|1[0-9]{2}|[1-9]?[0-9])\.(?:25[0-5]|2[0-4][0-9]|1[0-9]{2}|[1-9]?[0-9])$/;
-  if (ipv4LoopbackRegex.test(cleanAddr)) {
+  if (isLoopbackIPv4(cleanAddr)) {
     return true;
   }
 

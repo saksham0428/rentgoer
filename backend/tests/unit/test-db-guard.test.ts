@@ -6,6 +6,8 @@ import {
   loadAndValidateTestEnvironment,
   sanitizeErrorMessage,
   applyTestEnvironment,
+  isStrictLoopbackHost,
+  validateRuntimeServerAddress,
 } from '../helpers/test-db-guard';
 
 describe('Test Database Environment Safety Guard Unit Tests', () => {
@@ -95,6 +97,13 @@ describe('Test Database Environment Safety Guard Unit Tests', () => {
 
       const mdnsUrl = `postgresql://admin:${SECRET_PASSWORD}@nas.local:5432/rentgoer_test`;
       expect(() => validateTestDatabaseUrl(mdnsUrl)).toThrow(/SAFETY ABORT: Destination host .* is not a local loopback/);
+    });
+
+    it('rejects string-prefix spoofing attacks like 127.example.com', () => {
+      const spoofedUrl = `postgresql://admin:${SECRET_PASSWORD}@127.example.com:5432/rentgoer_test`;
+      expect(() => validateTestDatabaseUrl(spoofedUrl)).toThrow(
+        /SAFETY ABORT: Destination host '127\.example\.com' is not a local loopback/
+      );
     });
   });
 
@@ -212,5 +221,84 @@ describe('Test Database Environment Safety Guard Unit Tests', () => {
       }
     });
   });
+
+  // =========================================================================
+  // 8. Strict Loopback Hostname Validation (Fix 2)
+  // =========================================================================
+  describe('isStrictLoopbackHost', () => {
+    it('accepts localhost, ::1, and [::1]', () => {
+      expect(isStrictLoopbackHost('localhost')).toBe(true);
+      expect(isStrictLoopbackHost('::1')).toBe(true);
+      expect(isStrictLoopbackHost('[::1]')).toBe(true);
+      expect(isStrictLoopbackHost('LOCALHOST')).toBe(true);
+    });
+
+    it('accepts valid IPv4 loopback range 127.0.0.0/8', () => {
+      expect(isStrictLoopbackHost('127.0.0.1')).toBe(true);
+      expect(isStrictLoopbackHost('127.0.0.2')).toBe(true);
+      expect(isStrictLoopbackHost('127.1.2.3')).toBe(true);
+      expect(isStrictLoopbackHost('127.255.255.255')).toBe(true);
+    });
+
+    it('strictly rejects domain names starting with 127.', () => {
+      expect(isStrictLoopbackHost('127.example.com')).toBe(false);
+      expect(isStrictLoopbackHost('127.0.0.1.attacker.com')).toBe(false);
+      expect(isStrictLoopbackHost('127-local.com')).toBe(false);
+    });
+
+    it('rejects out-of-range octets and non-loopback IPs', () => {
+      expect(isStrictLoopbackHost('127.256.0.1')).toBe(false);
+      expect(isStrictLoopbackHost('128.0.0.1')).toBe(false);
+      expect(isStrictLoopbackHost('192.168.1.1')).toBe(false);
+      expect(isStrictLoopbackHost('10.0.0.1')).toBe(false);
+      expect(isStrictLoopbackHost('')).toBe(false);
+      expect(isStrictLoopbackHost(null as any)).toBe(false);
+    });
+  });
+
+  // =========================================================================
+  // 9. Runtime Server Address Validation (Fix 1)
+  // =========================================================================
+  describe('validateRuntimeServerAddress', () => {
+    it('accepts IPv4 loopback addresses with and without CIDR netmask', () => {
+      expect(validateRuntimeServerAddress('127.0.0.1')).toBe(true);
+      expect(validateRuntimeServerAddress('127.0.0.1/32')).toBe(true);
+      expect(validateRuntimeServerAddress('127.0.1.10/32')).toBe(true);
+      expect(validateRuntimeServerAddress('127.255.255.255/32')).toBe(true);
+    });
+
+    it('accepts IPv6 loopback addresses with and without CIDR netmask', () => {
+      expect(validateRuntimeServerAddress('::1')).toBe(true);
+      expect(validateRuntimeServerAddress('::1/128')).toBe(true);
+    });
+
+    it('rejects non-loopback IP addresses with fail-closed safety error', () => {
+      expect(() => validateRuntimeServerAddress('192.168.1.100')).toThrow(
+        /SAFETY ABORT: PostgreSQL server address '192\.168\.1\.100' is not a valid local loopback address/
+      );
+      expect(() => validateRuntimeServerAddress('10.0.0.5/32')).toThrow(
+        /SAFETY ABORT: PostgreSQL server address '10\.0\.0\.5' is not a valid local loopback address/
+      );
+      expect(() => validateRuntimeServerAddress('54.210.10.50')).toThrow(
+        /SAFETY ABORT: PostgreSQL server address '54\.210\.10\.50' is not a valid local loopback address/
+      );
+    });
+
+    it('rejects NULL server address when configured connection is TCP localhost', () => {
+      expect(() => validateRuntimeServerAddress(null, 'localhost')).toThrow(
+        /SAFETY ABORT: PostgreSQL server address is NULL, but connection configuration is not a Unix-domain socket/
+      );
+      expect(() => validateRuntimeServerAddress(undefined, '127.0.0.1')).toThrow(
+        /SAFETY ABORT: PostgreSQL server address is NULL, but connection configuration is not a Unix-domain socket/
+      );
+    });
+
+    it('deliberately permits NULL server address when configured host is an explicit Unix domain socket path', () => {
+      expect(validateRuntimeServerAddress(null, '/var/run/postgresql')).toBe(true);
+      expect(validateRuntimeServerAddress(null, '%2Ftmp')).toBe(true);
+      expect(validateRuntimeServerAddress(undefined, '/tmp/.s.PGSQL.5432')).toBe(true);
+    });
+  });
 });
+
 
