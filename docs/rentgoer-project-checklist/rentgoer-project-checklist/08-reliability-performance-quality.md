@@ -1,6 +1,6 @@
 # 08 — Reliability, performance & code quality
 
-**Overall Security & Quality Status:** PARTIAL PASS (Backend npm audit retains 3 High-severity findings from unpatched Prisma 6 transitive dependency `deepmerge-ts@7.1.5`; production runtime isolation and all test suites verified)
+**Overall Security & Quality Status:** PASS (Dependencies & Test Infrastructure; Backend and frontend npm audit findings resolved to 0 vulnerabilities; test DB isolation and all test suites verified)
 
 ## Confirmed milestones
 - [x] Restrict Prisma query logging in production to prevent log flooding and parameter exposure (`backend/src/lib/prisma.ts:L10-14`, commit `b191164`) — fixes audit P0.1
@@ -14,7 +14,7 @@
 - [x] SEC-04: Test infrastructure module resolution fix ensuring TypeScript test context resolution (`test-db-context.ts`) and fail-closed local test DB isolation (`test-db-guard.ts`)
 - [x] SEC-05 Phase 1: Remediate backend runtime production dependency vulnerabilities (`multer` to 2.5.0, `body-parser` to 2.4.0, `ip-address` to 10.7.4)
 - [x] SEC-05 Phase 2: Remediate frontend Vitest toolchain vulnerabilities (`vitest` upgraded to 4.1.12, removing vulnerable `tinypool`, resolving all frontend audit findings to 0)
-- [x] SEC-05 Phase 3: Backend Prisma tooling audit and compatibility review: verified production server (`node dist/index.js`) does not load `@prisma/config` or `deepmerge-ts`; identified Render build CLI requirement
+- [x] SEC-05 Phase 3: Backend Prisma tooling audit and transitive dependency remediation: resolved GHSA-ggr8-5vv4-36mx via root-level `overrides` (`"deepmerge-ts": "^8.0.2"`), bringing backend `npm audit` to 0 vulnerabilities while preserving Prisma 6 stability, schema validation, client generation, and test pass rates
 
 ## Remaining & proposed items
 - [ ] Add structured logging (Pino/Winston) and error tracking telemetry (Sentry integration)
@@ -37,6 +37,8 @@
 - **Frontend Type Check**: `npx tsc --noEmit` passes with **0 type errors**.
 - **Frontend Production Build**: `npm run build` compiles **all 20 static/dynamic routes** successfully.
 - **Playwright E2E Suite**: `npm run test:e2e` passes **24/24 tests** (25.0s) with test backend on isolated port 5001 and frontend on port 3100.
+- **Backend Security Audit**: `npm audit` reports **0 vulnerabilities** (resolving GHSA-ggr8-5vv4-36mx across `deepmerge-ts`, `@prisma/config`, and `prisma`).
+- **Prisma Schema Validation & Generation**: `npx prisma validate` and `npx prisma generate` verified with placeholder URLs under `deepmerge-ts@8.0.2`.
 - **Backend Unit Tests**: `npm test` passes **13/13 files**, **231/231 tests** (799ms).
 - **Backend Session Unit Tests**: `npm run test:session:unit` passes **30/30 offline tests**.
 - **Backend Database Integration Tests**: `npm run test:integration` passes **3/3 files**, **17/17 tests** (1.15s) against local `rentgoer_test` database (port 5432).
@@ -45,17 +47,14 @@
 - **Runtime Module Isolation Trace**: Both AST inspection of `backend/dist` and empirical Node.js module cache tracing (`require.cache`) confirm `@prisma/client` loads independently without importing or loading `@prisma/config` or `deepmerge-ts`.
 
 ## Residual risk & audit findings
-- **Backend Audit Findings**: `npm audit --json` in `backend/` retains **3 High-severity entries**:
-  - `deepmerge-ts@7.1.5` (GHSA-ggr8-5vv4-36mx, CWE-674: Stack Exhaustion when merging recursive object graphs)
-  - `@prisma/config@6.19.3` (transitive via `deepmerge-ts`)
-  - `prisma@6.19.3` (transitive via `@prisma/config`)
-- **Upstream Patch Status**: No patched Prisma 6 release exists; Prisma 6 reached end-of-life at `6.19.3`. The upstream fix is only available in Prisma 7.10.1+ (`isSemVerMajor: true`).
-- **Production Runtime Posture**: The remaining vulnerability is reported as isolated from normal production HTTP handling because `node dist/index.js` executes `@prisma/client`, and the project contains no `prisma.config.*` file. However, because the package remains installed in `node_modules` and executes during CLI tasks, absolute unreachability or zero risk across all operational contexts cannot be claimed.
+- **Backend Audit Findings (Remediated via Override)**: `npm audit` in `backend/` now reports **0 vulnerabilities** (previously 3 High-severity entries for GHSA-ggr8-5vv4-36mx / CWE-674 via transitive `deepmerge-ts@7.1.5`). Resolved by enforcing an npm root-level override (`"deepmerge-ts": "^8.0.2"` in `backend/package.json`).
+- **Verification Results**: Verified in isolation and real repository: dependency tree resolves `deepmerge-ts@8.0.2` under `@prisma/config@6.19.3`; `npm audit` passes with 0 vulnerabilities; `npx prisma validate` and `npx prisma generate` succeed cleanly; `npm run build` (`tsc`) compiles with 0 errors; all 231 backend unit tests, 30 session unit tests, and 17 local database integration tests pass.
+- **Dependency Override Workaround Consideration**: This fix operates via npm's package resolution override mechanism because upstream Prisma 6 pinned `deepmerge-ts@7.1.5` and has not published a patch release on the 6.x line. While runtime API compatibility with `@prisma/config` is empirically verified, this remains an intentional dependency override workaround and should be reassessed when Prisma publishes a compatible upstream fix or when planning a major upgrade to Prisma 7/8.
 - **E2E Egress Boundary Limitation**: Playwright route interception operates at the browser network layer and intercepts client requests (including Next.js image proxy calls). It does **not** function as an OS-level or kernel-level server-side egress firewall for Node.js backend processes.
 - **Deployment Constraints**: Render blueprint (`backend/render.yaml`) specifies `buildCommand: npm install && npx prisma generate && npm run build` with `NODE_ENV=production`. Moving `prisma` from `dependencies` to `devDependencies` would cause `npm install` to omit the CLI, breaking the build.
 
 ## Deferred work
-- **Prisma Major Version Migration**: Plan and execute a dedicated migration to **Prisma 7.10.1+** (or Prisma 8 LTS) to resolve `deepmerge-ts`, accompanied by thorough schema, query engine, and driver adapter regression testing.
+- **Prisma Major Version Migration**: Plan and execute a dedicated migration to **Prisma 7.10.1+** (or a future stable Prisma release, after checking official release status and compatibility) to resolve `deepmerge-ts`, accompanied by thorough schema, query engine, and driver adapter regression testing.
 - **Stronger Server-Side Egress Isolation**: Investigate network namespace or container-level egress firewalling for automated test pipelines to complement browser-level interception.
 - **Deployment Build Decoupling**: If multi-stage Docker builds or `--include=dev` flags are adopted in hosting configuration, relocate `prisma` and `typescript` from `dependencies` to `devDependencies`.
 
