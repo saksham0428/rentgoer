@@ -10,6 +10,7 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "test:integration": "vitest run --config vitest.integration.config.mts",
+    "start:test": "tsx tests/helpers/test-server.ts",
     "admin:provision": "tsx src/scripts/provision-admin.ts",
     "admin:provision:dist": "node dist/scripts/provision-admin.js",
     "test:provision": "tsx scratch/test-hardened-provisioning-unit.ts",
@@ -47,8 +48,9 @@
     "helmet": "^8.3.0",
     "jsonwebtoken": "^9.0.3",
     "mime-types": "^3.0.2",
-    "multer": "^2.4.0",
+    "multer": "^2.5.0",
     "prisma": "^6.19.3",
+    "sharp": "0.35.5",
     "typescript": "^7.0.2",
     "uuid": "^14.0.2"
   },

@@ -1,4 +1,5 @@
 import type { NextConfig } from "next";
+import { getSafeBackendUrl } from "./src/lib/backend-guard";
 
 const nextConfig: NextConfig = {
   /* config options here */
@@ -13,7 +14,7 @@ const nextConfig: NextConfig = {
     ],
   },
   async rewrites() {
-    const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:5000';
+    const backendUrl = getSafeBackendUrl();
     return [
       {
         source: '/api/proxy/:path*',

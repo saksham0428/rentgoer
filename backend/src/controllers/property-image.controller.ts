@@ -3,6 +3,7 @@ import { prisma } from '../lib/prisma';
 import { supabase, SUPABASE_STORAGE_BUCKET } from '../config/supabase';
 import { v4 as uuidv4 } from 'uuid';
 import mime from 'mime-types';
+import { validateImageContent, ValidatedImage } from '../lib/image-validator';
 
 const MAX_IMAGES_PER_PROPERTY = 10;
 
@@ -49,20 +50,37 @@ export const uploadImages = async (req: Request, res: Response): Promise<void> =
       return;
     }
 
+    // 1. Pre-validate ALL files in the batch before any storage operation.
+    // Rejects disguised text/HTML, SVG, MIME mismatch, corrupted buffers, or decompression bombs.
+    const validatedFiles: ValidatedImage[] = [];
+    for (const file of files) {
+      try {
+        const validated = await validateImageContent(file.buffer, file.mimetype);
+        validatedFiles.push(validated);
+      } catch (err: any) {
+        res.status(400).json({
+          success: false,
+          message: err.message || 'Invalid image file content.',
+        });
+        return;
+      }
+    }
+
     const uploadedRecords: any[] = [];
     const uploadedPaths: string[] = [];
 
-    // Process files one by one to handle partial failures cleanly
-    for (const file of files) {
-      const ext = mime.extension(file.mimetype) || 'bin';
+    // Process validated files one by one to handle partial failures cleanly
+    for (let i = 0; i < files.length; i++) {
+      const file = files[i];
+      const validated = validatedFiles[i];
       const uniqueId = uuidv4();
-      const storagePath = `properties/${propertyId}/${uniqueId}.${ext}`;
+      const storagePath = `properties/${propertyId}/${uniqueId}.${validated.extension}`;
 
-      // Upload to Supabase Storage
+      // Upload to Supabase Storage using strictly validated extension and contentType
       const { data: uploadData, error: uploadError } = await supabase.storage
         .from(SUPABASE_STORAGE_BUCKET)
         .upload(storagePath, file.buffer, {
-          contentType: file.mimetype,
+          contentType: validated.contentType,
           cacheControl: '3600',
           upsert: false
         });

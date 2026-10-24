@@ -1,7 +1,9 @@
+import { getSafeBackendUrl } from './backend-guard';
+
 const isServer = typeof window === 'undefined';
 
 export const API_BASE_URL = isServer
-  ? (process.env.NEXT_PUBLIC_BACKEND_URL ? `${process.env.NEXT_PUBLIC_BACKEND_URL}/api` : 'http://localhost:5000/api')
+  ? `${getSafeBackendUrl()}/api`
   : (process.env.NEXT_PUBLIC_API_URL || '/api/proxy');
 
 interface FetchOptions extends RequestInit {
