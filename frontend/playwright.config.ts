@@ -49,7 +49,7 @@ export default defineConfig({
       },
     },
     {
-      command: 'npx next start -p 3100',
+      command: 'npx next build && npx next start -p 3100',
       url: 'http://localhost:3100',
       reuseExistingServer: false,
       timeout: 60 * 1000,
@@ -57,6 +57,7 @@ export default defineConfig({
         PORT: '3100',
         NODE_ENV: 'production',
         RENTGOER_TEST_MODE: 'true',
+        TEST_BACKEND_URL: 'http://127.0.0.1:5001',
         NEXT_PUBLIC_API_URL: '/api/proxy',
         NEXT_PUBLIC_BACKEND_URL: 'http://127.0.0.1:5001',
       },

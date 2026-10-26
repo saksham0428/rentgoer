@@ -20,8 +20,12 @@ import {
   Phone, 
   Calendar,
   Building,
-  UserCheck
+  UserCheck,
+  Compass,
+  FileText
 } from 'lucide-react';
+import { Select } from '@/components/ui/Select';
+import { getProfileCompletionStatus, MOVE_IN_TIMELINE_CHOICES } from '@/lib/profile';
 
 function ProfileContent() {
   const { user, loading: authLoading, refreshUser, logout } = useAuth();
@@ -35,11 +39,20 @@ function ProfileContent() {
   // Profile form state
   const [name, setName] = useState('');
   const [phone, setPhone] = useState('');
+  const [bio, setBio] = useState('');
+  const [preferredCity, setPreferredCity] = useState('');
+  const [monthlyBudget, setMonthlyBudget] = useState('');
+  const [moveInTimeline, setMoveInTimeline] = useState('');
+
   const [profileLoading, setProfileLoading] = useState(false);
   const [profileError, setProfileError] = useState('');
   const [profileSuccess, setProfileSuccess] = useState('');
   const [nameError, setNameError] = useState('');
   const [phoneError, setPhoneError] = useState('');
+  const [bioError, setBioError] = useState('');
+  const [preferredCityError, setPreferredCityError] = useState('');
+  const [monthlyBudgetError, setMonthlyBudgetError] = useState('');
+  const [moveInTimelineError, setMoveInTimelineError] = useState('');
 
   // Password form state
   const [currentPassword, setCurrentPassword] = useState('');
@@ -78,7 +91,17 @@ function ProfileContent() {
     }
     setName(user.name || '');
     setPhone(user.phone || '');
+    setBio(user.bio || '');
+    setPreferredCity(user.preferredCity || '');
+    setMonthlyBudget(
+      user.monthlyBudget !== undefined && user.monthlyBudget !== null
+        ? String(user.monthlyBudget)
+        : ''
+    );
+    setMoveInTimeline(user.moveInTimeline || '');
   }, [user, authLoading, router]);
+
+  const profileStatus = getProfileCompletionStatus(user);
 
   if (authLoading || !user) {
     return (
@@ -95,24 +118,70 @@ function ProfileContent() {
     setProfileSuccess('');
     setNameError('');
     setPhoneError('');
+    setBioError('');
+    setPreferredCityError('');
+    setMonthlyBudgetError('');
+    setMoveInTimelineError('');
+
+    let hasValidationError = false;
 
     const trimmedName = name.trim();
     if (!trimmedName || trimmedName.length < 2) {
       setNameError('Name must be at least 2 characters long');
-      return;
-    }
-    if (trimmedName.length > 60) {
+      hasValidationError = true;
+    } else if (trimmedName.length > 60) {
       setNameError('Name cannot exceed 60 characters');
-      return;
+      hasValidationError = true;
     }
 
     const trimmedPhone = phone.trim();
     if (trimmedPhone) {
-      const phoneRegex = /^[+]?[(]?[0-9]{1,4}[)]?[-\s./0-9]{5,15}$/;
-      if (!phoneRegex.test(trimmedPhone) || trimmedPhone.length < 7 || trimmedPhone.length > 20) {
+      const phoneRegex = /^[+]?[0-9\s().-]{7,20}$/;
+      const digitsOnly = trimmedPhone.replace(/\D/g, '');
+      if (
+        !phoneRegex.test(trimmedPhone) ||
+        trimmedPhone.length < 7 ||
+        trimmedPhone.length > 20 ||
+        digitsOnly.length < 7 ||
+        digitsOnly.length > 15
+      ) {
         setPhoneError('Please enter a valid phone number (e.g. +91 9876543210)');
-        return;
+        hasValidationError = true;
       }
+    }
+
+    const trimmedBio = bio.trim();
+    if (trimmedBio.length > 500) {
+      setBioError('Introduction cannot exceed 500 characters');
+      hasValidationError = true;
+    }
+
+    const trimmedCity = preferredCity.trim();
+    if (trimmedCity && (trimmedCity.length < 2 || trimmedCity.length > 100)) {
+      setPreferredCityError('Preferred location must be between 2 and 100 characters');
+      hasValidationError = true;
+    }
+
+    let parsedBudget: number | null = null;
+    const trimmedBudget = monthlyBudget.trim();
+    if (trimmedBudget) {
+      const num = Number(trimmedBudget);
+      if (isNaN(num) || !isFinite(num) || num <= 0 || num > 10000000) {
+        setMonthlyBudgetError('Monthly budget must be a positive number up to ₹1,00,00,000');
+        hasValidationError = true;
+      } else {
+        parsedBudget = num;
+      }
+    }
+
+    const trimmedTimeline = moveInTimeline.trim();
+    if (trimmedTimeline && !(MOVE_IN_TIMELINE_CHOICES as readonly string[]).includes(trimmedTimeline)) {
+      setMoveInTimelineError('Please select a valid move-in timeline');
+      hasValidationError = true;
+    }
+
+    if (hasValidationError) {
+      return;
     }
 
     setProfileLoading(true);
@@ -121,6 +190,10 @@ function ProfileContent() {
       const res = await api.put<{ success: boolean; message: string; user: any }>('/auth/profile', {
         name: trimmedName,
         phone: trimmedPhone || null,
+        bio: trimmedBio || null,
+        preferredCity: trimmedCity || null,
+        monthlyBudget: parsedBudget,
+        moveInTimeline: trimmedTimeline || null,
       });
 
       setProfileSuccess(res.message || 'Profile updated successfully!');
@@ -136,8 +209,20 @@ function ProfileContent() {
   const handleProfileReset = () => {
     setName(user.name || '');
     setPhone(user.phone || '');
+    setBio(user.bio || '');
+    setPreferredCity(user.preferredCity || '');
+    setMonthlyBudget(
+      user.monthlyBudget !== undefined && user.monthlyBudget !== null
+        ? String(user.monthlyBudget)
+        : ''
+    );
+    setMoveInTimeline(user.moveInTimeline || '');
     setNameError('');
     setPhoneError('');
+    setBioError('');
+    setPreferredCityError('');
+    setMonthlyBudgetError('');
+    setMoveInTimelineError('');
     setProfileError('');
     setProfileSuccess('');
   };
@@ -341,6 +426,34 @@ function ProfileContent() {
           )}
 
           <form onSubmit={handleProfileSubmit} className="space-y-6">
+            {/* Renter Profile Completion Progress (Tenants only) */}
+            {user.role === 'TENANT' && (
+              <div className="p-4 bg-muted/10 border border-border/80 rounded-xl mb-6">
+                <div className="flex items-center justify-between mb-2">
+                  <span className="text-xs font-bold text-primary uppercase tracking-wide">Renter Profile Checklist</span>
+                  <span className="text-xs font-bold text-foreground bg-primary/10 px-2.5 py-0.5 rounded-full">
+                    {profileStatus.completedCount} of {profileStatus.totalItems} ({profileStatus.percentage}%)
+                  </span>
+                </div>
+                <div className="w-full bg-muted/20 rounded-full h-2 mb-3 overflow-hidden">
+                  <div
+                    className="bg-primary h-2 rounded-full transition-all duration-500 ease-out"
+                    style={{ width: `${profileStatus.percentage}%` }}
+                  />
+                </div>
+                {profileStatus.isComplete ? (
+                  <p className="text-xs text-emerald-700 font-medium flex items-center gap-1.5">
+                    <CheckCircle2 className="h-4 w-4 text-emerald-600" />
+                    All 5 renter checklist items are complete! Your profile is ready for property owners.
+                  </p>
+                ) : (
+                  <p className="text-xs text-muted">
+                    Complete the remaining {profileStatus.missingItems.length} {profileStatus.missingItems.length === 1 ? 'item' : 'items'} below to complete your profile.
+                  </p>
+                )}
+              </div>
+            )}
+
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-5 sm:gap-6">
               {/* Full Name */}
               <div>
@@ -361,7 +474,7 @@ function ProfileContent() {
               {/* Phone Number */}
               <div>
                 <Input
-                  label="Phone Number"
+                  label="Contact Phone Number"
                   id="profile-phone"
                   value={phone}
                   onChange={(e) => {
@@ -371,11 +484,11 @@ function ProfileContent() {
                   error={phoneError}
                   placeholder="+91 9876543210"
                 />
-                <p className="mt-1 text-xs text-muted">Used for rental coordination and account security.</p>
+                <p className="mt-1 text-xs text-muted">Direct contact line for rental coordination.</p>
               </div>
 
               {/* Role (Read-only) */}
-              <div>
+              <div className="sm:col-span-2">
                 <label className="block text-sm font-medium text-foreground mb-1 flex items-center gap-1.5">
                   Account Type
                   <span className="text-[11px] text-muted font-normal">(Read-only)</span>
@@ -393,6 +506,106 @@ function ProfileContent() {
                 <p className="mt-1 text-xs text-muted">Role permissions are verified and assigned at registration.</p>
               </div>
             </div>
+
+            {/* Tenant Renter Preferences Section */}
+            {user.role === 'TENANT' && (
+              <div className="mt-8 pt-8 border-t border-border space-y-6">
+                <div>
+                  <h4 className="text-base font-bold text-foreground flex items-center gap-2">
+                    <Compass className="h-4.5 w-4.5 text-primary" />
+                    Renter Preferences & Details
+                  </h4>
+                  <p className="text-xs text-muted mt-0.5">
+                    Help property owners evaluate your inquiry quickly by sharing your preferences and move-in timeline.
+                  </p>
+                </div>
+
+                {/* About me / Bio */}
+                <div>
+                  <label htmlFor="profile-bio" className="block text-sm font-medium text-foreground mb-1 flex items-center justify-between">
+                    <span>About Me / Renter Introduction</span>
+                    <span className="text-xs text-muted font-normal">{bio.length}/500</span>
+                  </label>
+                  <textarea
+                    id="profile-bio"
+                    rows={3}
+                    value={bio}
+                    onChange={(e) => {
+                      setBio(e.target.value);
+                      if (bioError) setBioError('');
+                    }}
+                    placeholder="e.g. Software engineer looking for a peaceful 2BHK near HSR Layout. Non-smoker, reliable tenant with stable income."
+                    className={`block w-full px-3.5 py-2.5 text-sm border ${
+                      bioError ? 'border-danger focus:ring-danger focus:border-danger' : 'border-border focus:ring-primary focus:border-primary'
+                    } rounded-lg shadow-2xs focus:outline-none focus:ring-2 focus:ring-primary/20 bg-background text-foreground transition-all`}
+                  />
+                  {bioError ? (
+                    <p className="mt-1 text-sm text-danger">{bioError}</p>
+                  ) : (
+                    <p className="mt-1 text-xs text-muted">A short introduction makes your requests stand out to landlords.</p>
+                  )}
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-5 sm:gap-6">
+                  {/* Preferred City / Locality */}
+                  <div>
+                    <Input
+                      label="Preferred Rental City or Locality"
+                      id="profile-preferred-city"
+                      value={preferredCity}
+                      onChange={(e) => {
+                        setPreferredCity(e.target.value);
+                        if (preferredCityError) setPreferredCityError('');
+                      }}
+                      error={preferredCityError}
+                      placeholder="e.g. Indiranagar, Bengaluru"
+                    />
+                    <p className="mt-1 text-xs text-muted">Primary neighbourhood or city you are looking to rent in.</p>
+                  </div>
+
+                  {/* Monthly Rental Budget */}
+                  <div>
+                    <Input
+                      label="Monthly Rental Budget (₹/mo)"
+                      id="profile-monthly-budget"
+                      type="number"
+                      min="1"
+                      max="10000000"
+                      value={monthlyBudget}
+                      onChange={(e) => {
+                        setMonthlyBudget(e.target.value);
+                        if (monthlyBudgetError) setMonthlyBudgetError('');
+                      }}
+                      error={monthlyBudgetError}
+                      placeholder="e.g. 35000"
+                    />
+                    <p className="mt-1 text-xs text-muted">Maximum monthly rent you are comfortable paying.</p>
+                  </div>
+
+                  {/* Expected Move-in Timeline */}
+                  <div className="sm:col-span-2">
+                    <Select
+                      label="Expected Move-in Timeline"
+                      id="profile-movein-timeline"
+                      value={moveInTimeline}
+                      onChange={(e) => {
+                        setMoveInTimeline(e.target.value);
+                        if (moveInTimelineError) setMoveInTimelineError('');
+                      }}
+                      error={moveInTimelineError}
+                      options={[
+                        { label: 'Select move-in timeline...', value: '' },
+                        ...MOVE_IN_TIMELINE_CHOICES.map((choice) => ({
+                          label: choice,
+                          value: choice,
+                        })),
+                      ]}
+                    />
+                    <p className="mt-1 text-xs text-muted">Helps owners understand your urgency and move-in readiness.</p>
+                  </div>
+                </div>
+              </div>
+            )}
 
             {/* Actions */}
             <div className="pt-6 border-t border-border flex flex-col-reverse sm:flex-row justify-end gap-3">

@@ -5,6 +5,7 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { MessageSquare, Search, MapPin, Loader2, RefreshCw, X, ClipboardList, Home } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
+import { resolvePrimaryPropertyImage } from '@/lib/property-images';
 
 interface ConversationListPanelProps {
   conversations: any[];
@@ -181,7 +182,7 @@ export const ConversationListPanel: React.FC<ConversationListPanelProps> = ({
           filteredConversations.map((conv) => {
             const otherUser = isTenant ? conv.owner : conv.tenant;
             const property = conv.property;
-            const propertyImage = property?.images?.[0]?.url || '/placeholder-property.jpg';
+            const propertyImage = resolvePrimaryPropertyImage(property?.images, property?.id).url;
             const lastMessage = conv.messages?.[0];
             const isActive = conv.id === activeConversationId;
             const unreadCount = conv._count?.messages || 0;

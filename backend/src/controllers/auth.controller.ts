@@ -225,6 +225,10 @@ export const login = async (req: Request, res: Response): Promise<void> => {
         email: user.email,
         role: user.role,
         phone: user.phone,
+        bio: user.bio,
+        preferredCity: user.preferredCity,
+        monthlyBudget: user.monthlyBudget,
+        moveInTimeline: user.moveInTimeline,
         isVerified: user.isVerified,
         createdAt: user.createdAt,
       },
@@ -323,6 +327,10 @@ export const getMe = async (req: Request, res: Response): Promise<void> => {
         email: true,
         role: true,
         phone: true,
+        bio: true,
+        preferredCity: true,
+        monthlyBudget: true,
+        moveInTimeline: true,
         isVerified: true,
         createdAt: true,
       },
@@ -351,7 +359,7 @@ export const updateProfile = async (req: Request, res: Response): Promise<void> 
       return;
     }
 
-    const { name, phone } = req.body;
+    const { name, phone, bio, preferredCity, monthlyBudget, moveInTimeline } = req.body;
 
     // Validate name
     if (typeof name !== 'string' || name.trim().length < 2 || name.trim().length > 60) {
@@ -367,20 +375,94 @@ export const updateProfile = async (req: Request, res: Response): Promise<void> 
         return;
       }
       const trimmedPhone = phone.trim();
-      const phoneRegex = /^[+]?[(]?[0-9]{1,4}[)]?[-\s./0-9]{5,15}$/;
-      if (!phoneRegex.test(trimmedPhone) || trimmedPhone.length < 7 || trimmedPhone.length > 20) {
+      const phoneRegex = /^[+]?[0-9\s().-]{7,20}$/;
+      const digitsOnly = trimmedPhone.replace(/\D/g, '');
+      if (
+        !phoneRegex.test(trimmedPhone) ||
+        trimmedPhone.length < 7 ||
+        trimmedPhone.length > 20 ||
+        digitsOnly.length < 7 ||
+        digitsOnly.length > 15
+      ) {
         res.status(400).json({ success: false, message: 'Invalid phone number format' });
         return;
       }
       sanitizedPhone = trimmedPhone;
     }
 
-    // Update only allowed fields (name, phone). Reject/ignore role, email, isVerified, passwordHash, id.
+    // Validate bio / renter introduction (optional)
+    let sanitizedBio: string | null = null;
+    if (bio !== undefined && bio !== null && bio !== '') {
+      if (typeof bio !== 'string') {
+        res.status(400).json({ success: false, message: 'Introduction must be a string' });
+        return;
+      }
+      const trimmedBio = bio.trim();
+      if (trimmedBio.length > 500) {
+        res.status(400).json({ success: false, message: 'Introduction cannot exceed 500 characters' });
+        return;
+      }
+      sanitizedBio = trimmedBio.length > 0 ? trimmedBio : null;
+    }
+
+    // Validate preferredCity / locality (optional)
+    let sanitizedPreferredCity: string | null = null;
+    if (preferredCity !== undefined && preferredCity !== null && preferredCity !== '') {
+      if (typeof preferredCity !== 'string') {
+        res.status(400).json({ success: false, message: 'Preferred location must be a string' });
+        return;
+      }
+      const trimmedCity = preferredCity.trim();
+      if (trimmedCity.length < 2 || trimmedCity.length > 100) {
+        res.status(400).json({ success: false, message: 'Preferred location must be between 2 and 100 characters' });
+        return;
+      }
+      sanitizedPreferredCity = trimmedCity;
+    }
+
+    // Validate monthlyBudget (optional)
+    let sanitizedMonthlyBudget: number | null = null;
+    if (monthlyBudget !== undefined && monthlyBudget !== null && monthlyBudget !== '') {
+      const numBudget = typeof monthlyBudget === 'number' ? monthlyBudget : Number(monthlyBudget);
+      if (isNaN(numBudget) || !isFinite(numBudget) || numBudget <= 0 || numBudget > 10000000) {
+        res.status(400).json({ success: false, message: 'Monthly budget must be a positive number up to 10,000,000' });
+        return;
+      }
+      sanitizedMonthlyBudget = numBudget;
+    }
+
+    // Validate moveInTimeline (optional)
+    const validTimelines = ['Immediately', 'Within one month', 'In 1–3 months', 'In 1-3 months', 'Flexible'];
+    let sanitizedMoveInTimeline: string | null = null;
+    if (moveInTimeline !== undefined && moveInTimeline !== null && moveInTimeline !== '') {
+      if (typeof moveInTimeline !== 'string') {
+        res.status(400).json({ success: false, message: 'Invalid move-in timeline' });
+        return;
+      }
+      let trimmedTimeline = moveInTimeline.trim();
+      if (trimmedTimeline === 'In 1-3 months') {
+        trimmedTimeline = 'In 1–3 months';
+      }
+      if (!validTimelines.includes(trimmedTimeline)) {
+        res.status(400).json({
+          success: false,
+          message: 'Move-in timeline must be one of: Immediately, Within one month, In 1–3 months, Flexible',
+        });
+        return;
+      }
+      sanitizedMoveInTimeline = trimmedTimeline;
+    }
+
+    // Update only allowed fields. Reject/ignore role, email, isVerified, passwordHash, id.
     const updatedUser = await prisma.user.update({
       where: { id: userId },
       data: {
         name: name.trim(),
         phone: sanitizedPhone,
+        bio: sanitizedBio,
+        preferredCity: sanitizedPreferredCity,
+        monthlyBudget: sanitizedMonthlyBudget,
+        moveInTimeline: sanitizedMoveInTimeline,
       },
       select: {
         id: true,
@@ -388,6 +470,10 @@ export const updateProfile = async (req: Request, res: Response): Promise<void> 
         email: true,
         role: true,
         phone: true,
+        bio: true,
+        preferredCity: true,
+        monthlyBudget: true,
+        moveInTimeline: true,
         isVerified: true,
         createdAt: true,
       },
@@ -577,6 +663,10 @@ export const changeEmail = async (req: Request, res: Response): Promise<void> =>
           email: true,
           role: true,
           phone: true,
+          bio: true,
+          preferredCity: true,
+          monthlyBudget: true,
+          moveInTimeline: true,
           isVerified: true,
           createdAt: true,
           tokenVersion: true,

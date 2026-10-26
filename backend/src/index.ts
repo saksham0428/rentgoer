@@ -23,11 +23,14 @@ import userRoutes from './routes/user.routes';
 import messageRoutes from './routes/message.routes';
 
 
+import { applyDevEnvironment } from './config/dev-db-guard';
+
+// Initialize fail-closed development environment before PrismaClient is evaluated
+applyDevEnvironment();
+
 import { errorHandler } from './middleware/error.middleware';
 import { prisma } from './lib/prisma';
 import { validateAuthConfigAtStartup } from './config/auth.config';
-
-dotenv.config();
 
 // Validate critical authentication and session configuration at startup
 validateAuthConfigAtStartup();

@@ -40,6 +40,10 @@ describe('Button component', () => {
 
     rerender(<Button variant="ghost">Ghost</Button>);
     expect(screen.getByRole('button')).toHaveClass('hover:bg-muted/10');
+
+    rerender(<Button variant="inverted">Inverted</Button>);
+    expect(screen.getByRole('button')).toHaveClass('bg-white');
+    expect(screen.getByRole('button')).toHaveClass('text-primary');
   });
 
   it('applies fullWidth style when requested', () => {

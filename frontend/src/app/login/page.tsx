@@ -70,9 +70,12 @@ function LoginContent() {
   };
 
   return (
-    <div className="flex-grow flex items-center justify-center py-8 sm:py-12 px-3 sm:px-6 lg:px-8 bg-background">
-      <div className="max-w-md w-full space-y-6 sm:space-y-8 bg-card p-6 sm:p-8 rounded-xl border border-border shadow-sm">
-        <div>
+    <div className="flex-grow flex items-center justify-center py-10 sm:py-16 px-4 sm:px-6 lg:px-8 bg-background">
+      <div className="max-w-md w-full space-y-6 sm:space-y-8 bg-card p-7 sm:p-10 rounded-2xl border border-border/80 shadow-md">
+        <div className="text-center">
+          <div className="w-12 h-12 rounded-2xl bg-primary-light text-primary flex items-center justify-center mx-auto mb-4 font-black text-xl shadow-2xs">
+            RG
+          </div>
           <h2 className="text-center text-3xl font-extrabold text-foreground tracking-tight">
             Welcome back
           </h2>

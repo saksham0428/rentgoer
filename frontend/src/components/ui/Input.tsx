@@ -20,9 +20,9 @@ export const Input = React.forwardRef<HTMLInputElement, InputProps>(
         <input
           ref={ref}
           id={inputId}
-          className={`appearance-none block w-full px-3 py-2 border ${
+          className={`appearance-none block w-full px-3.5 py-2.5 border ${
             error ? 'border-danger focus:ring-danger focus:border-danger' : 'border-border focus:ring-primary focus:border-primary'
-          } rounded-md shadow-sm placeholder-muted text-foreground focus:outline-none focus:ring-1 sm:text-sm transition-colors ${className}`}
+          } rounded-lg shadow-2xs placeholder:text-muted/60 text-foreground bg-card focus:outline-none focus:ring-2 focus:ring-primary/20 sm:text-sm transition-all duration-150 ${className}`}
           {...props}
         />
         {error && <p className="mt-1 text-sm text-danger">{error}</p>}

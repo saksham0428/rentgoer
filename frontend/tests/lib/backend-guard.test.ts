@@ -109,5 +109,19 @@ describe('SEC-03: Backend URL Validation & Test Isolation Guard', () => {
       });
       expect(prodUrl).toBe('https://api.rentgoer.com');
     });
+
+    it('13. in test mode, resolves TEST_BACKEND_URL when rawUrl is undefined', () => {
+      const original = process.env.TEST_BACKEND_URL;
+      try {
+        process.env.TEST_BACKEND_URL = 'http://127.0.0.1:5001';
+        const testUrl = getSafeBackendUrl({
+          rawUrl: undefined,
+          isTestMode: true,
+        });
+        expect(testUrl).toBe('http://127.0.0.1:5001');
+      } finally {
+        process.env.TEST_BACKEND_URL = original;
+      }
+    });
   });
 });

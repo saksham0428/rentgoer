@@ -238,9 +238,9 @@ export const PropertyForm = ({ initialData, isEdit = false }: PropertyFormProps)
         </div>
       )}
 
-      <form onSubmit={handleSave} className="bg-card border border-border p-6 sm:p-8 rounded-xl shadow-sm space-y-8">
+      <form onSubmit={handleSave} className="bg-card border border-border/80 p-6 sm:p-8 rounded-2xl shadow-2xs space-y-8">
         <div>
-          <h2 className="text-xl font-bold text-foreground mb-4 pb-2 border-b border-border">Basic Details</h2>
+          <h2 className="text-xl font-bold text-foreground mb-4 pb-2 border-b border-border/60">Basic Details</h2>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div className="md:col-span-2">
               <Input
@@ -256,7 +256,7 @@ export const PropertyForm = ({ initialData, isEdit = false }: PropertyFormProps)
               <textarea
                 required
                 rows={4}
-                className="appearance-none block w-full px-3 py-2 border border-border rounded-md shadow-sm placeholder-muted focus:outline-none focus:ring-1 focus:ring-primary focus:border-primary sm:text-sm transition-colors bg-card text-foreground"
+                className="appearance-none block w-full px-3.5 py-2.5 border border-border rounded-lg shadow-2xs placeholder:text-muted/60 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary sm:text-sm transition-all bg-card text-foreground"
                 placeholder="Describe the property features..."
                 value={formData.description}
                 onChange={(e) => handleChange('description', e.target.value)}

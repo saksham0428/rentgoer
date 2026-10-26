@@ -1,15 +1,20 @@
 @import "tailwindcss";
 
 :root {
-  --background: #f8fafc;
-  --foreground: #0f172a;
-  --primary: #2563eb;
-  --primary-hover: #1d4ed8;
-  --border: #e2e8f0;
+  --background: #faf8f5;
+  --foreground: #1c1917;
+  --primary: #1b4d3e;
+  --primary-hover: #143b30;
+  --primary-light: #edf5f1;
+  --border: #e7e5e4;
+  --border-subtle: #f2efe9;
   --card: #ffffff;
-  --muted: #64748b;
-  --danger: #ef4444;
-  --success: #10b981;
+  --card-hover: #ffffff;
+  --muted: #66605b;
+  --muted-light: #f5f3f0;
+  --danger: #dc2626;
+  --success: #15803d;
+  --accent-gold: #d97706;
 }
 
 @theme inline {
@@ -17,11 +22,16 @@
   --color-foreground: var(--foreground);
   --color-primary: var(--primary);
   --color-primary-hover: var(--primary-hover);
+  --color-primary-light: var(--primary-light);
   --color-border: var(--border);
+  --color-border-subtle: var(--border-subtle);
   --color-card: var(--card);
+  --color-card-hover: var(--card-hover);
   --color-muted: var(--muted);
+  --color-muted-light: var(--muted-light);
   --color-danger: var(--danger);
   --color-success: var(--success);
+  --color-accent-gold: var(--accent-gold);
 }
 
 html {

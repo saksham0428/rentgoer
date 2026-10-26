@@ -69,19 +69,19 @@ export default async function PropertyDetailsPage({ params }: PageProps) {
       
       {/* Breadcrumb / Back Navigation */}
       <div className="mb-6">
-        <Link href="/properties" className="inline-flex items-center text-sm font-medium text-muted hover:text-primary transition-colors">
-          <ArrowLeft className="mr-2 h-4 w-4" />
-          Back to all properties
+        <Link href="/properties" className="inline-flex items-center text-sm font-semibold text-muted hover:text-primary transition-colors gap-2 px-3 py-1.5 rounded-lg hover:bg-stone-100 w-fit">
+          <ArrowLeft className="h-4 w-4" />
+          <span>Back to all properties</span>
         </Link>
       </div>
 
       {/* Header */}
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 gap-4">
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-end mb-8 gap-4 pb-6 border-b border-border/60">
         <div>
-          <div className="flex items-center gap-3 mb-2 flex-wrap">
-            <h1 className="text-2xl sm:text-4xl font-bold text-foreground tracking-tight break-words">
+          <div className="flex items-center gap-3 mb-2.5 flex-wrap">
+            <h1 className="text-2xl sm:text-4xl font-extrabold text-foreground tracking-tight break-words">
               {property.title}
-              {property.isVerified && <BadgeCheck className="h-6 w-6 text-blue-500 inline-block ml-2 align-text-bottom"  />}
+              {property.isVerified && <BadgeCheck className="h-6 w-6 text-blue-500 inline-block ml-2 align-text-bottom" />}
             </h1>
             <FavoriteButton propertyId={property.id} className="relative z-10" />
             {!property.isAvailable && (
@@ -90,24 +90,24 @@ export default async function PropertyDetailsPage({ params }: PageProps) {
               </span>
             )}
           </div>
-          <div className="flex items-center text-muted gap-4 flex-wrap">
-            <div className="flex items-center">
-              <MapPin className="h-5 w-5 mr-1 flex-shrink-0" />
-              <span className="text-base sm:text-lg">{property.locality}, {property.city}</span>
+          <div className="flex items-center text-muted gap-4 flex-wrap text-sm sm:text-base">
+            <div className="flex items-center text-muted">
+              <MapPin className="h-4 w-4 mr-1 text-primary flex-shrink-0" />
+              <span>{property.locality}, {property.city}</span>
             </div>
             {property.averageRating !== undefined && property.reviewCount > 0 && (
-              <div className="flex items-center gap-1.5 text-amber-500 bg-amber-500/10 px-2 py-0.5 rounded-full border border-amber-500/20">
-                <Star className="h-4 w-4 fill-current" />
-                <span className="font-semibold text-sm">{property.averageRating.toFixed(1)}</span>
+              <div className="flex items-center gap-1.5 text-amber-700 bg-amber-50 px-2.5 py-0.5 rounded-full border border-amber-200">
+                <Star className="h-3.5 w-3.5 fill-amber-400 text-amber-500" />
+                <span className="font-bold text-xs">{property.averageRating.toFixed(1)}</span>
                 <span className="text-muted text-xs">({property.reviewCount} reviews)</span>
               </div>
             )}
           </div>
         </div>
         <div className="text-left md:text-right">
-          <p className="text-3xl sm:text-4xl font-extrabold text-primary">
+          <p className="text-3xl sm:text-4xl font-black text-primary tracking-tight">
             {formatCurrency(property.rent)}
-            <span className="text-base sm:text-lg text-muted font-normal">/mo</span>
+            <span className="text-base sm:text-lg text-muted font-normal ml-1">/mo</span>
           </p>
         </div>
       </div>
@@ -117,46 +117,50 @@ export default async function PropertyDetailsPage({ params }: PageProps) {
         <ImageGallery images={property.images || []} title={property.title} />
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-12">
-        {/* Main Content */}
-        <div className="lg:col-span-2 space-y-10">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-10">
+        {/* Main Content Column */}
+        <div className="lg:col-span-2 space-y-8">
           
-          {/* Key Features */}
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 py-6 border-y border-border">
-            <div className="flex flex-col gap-1">
-              <span className="text-muted text-sm flex items-center"><BedDouble className="h-4 w-4 mr-1" /> Bedrooms</span>
-              <span className="font-semibold text-lg">{property.bedrooms}</span>
-            </div>
-            <div className="flex flex-col gap-1">
-              <span className="text-muted text-sm flex items-center"><Bath className="h-4 w-4 mr-1" /> Bathrooms</span>
-              <span className="font-semibold text-lg">{property.bathrooms}</span>
-            </div>
-            <div className="flex flex-col gap-1">
-              <span className="text-muted text-sm flex items-center"><Home className="h-4 w-4 mr-1" /> Type</span>
-              <span className="font-semibold text-lg">{formatEnum(property.propertyType)}</span>
-            </div>
-            <div className="flex flex-col gap-1">
-              <span className="text-muted text-sm flex items-center"><Info className="h-4 w-4 mr-1" /> Furnishing</span>
-              <span className="font-semibold text-lg">{formatEnum(property.furnishedStatus)}</span>
+          {/* Key Features Card */}
+          <div className="bg-card border border-border/80 rounded-2xl p-6 shadow-2xs">
+            <h3 className="text-base font-bold text-foreground mb-4">Key Property Specifications</h3>
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+              <div className="flex flex-col gap-1 p-3 rounded-xl bg-stone-50 border border-stone-100">
+                <span className="text-muted text-xs flex items-center font-medium"><BedDouble className="h-3.5 w-3.5 mr-1.5 text-primary" /> Bedrooms</span>
+                <span className="font-bold text-lg text-foreground">{property.bedrooms}</span>
+              </div>
+              <div className="flex flex-col gap-1 p-3 rounded-xl bg-stone-50 border border-stone-100">
+                <span className="text-muted text-xs flex items-center font-medium"><Bath className="h-3.5 w-3.5 mr-1.5 text-primary" /> Bathrooms</span>
+                <span className="font-bold text-lg text-foreground">{property.bathrooms}</span>
+              </div>
+              <div className="flex flex-col gap-1 p-3 rounded-xl bg-stone-50 border border-stone-100">
+                <span className="text-muted text-xs flex items-center font-medium"><Home className="h-3.5 w-3.5 mr-1.5 text-primary" /> Type</span>
+                <span className="font-bold text-base text-foreground truncate">{formatEnum(property.propertyType)}</span>
+              </div>
+              <div className="flex flex-col gap-1 p-3 rounded-xl bg-stone-50 border border-stone-100">
+                <span className="text-muted text-xs flex items-center font-medium"><Info className="h-3.5 w-3.5 mr-1.5 text-primary" /> Furnishing</span>
+                <span className="font-bold text-base text-foreground truncate">{formatEnum(property.furnishedStatus)}</span>
+              </div>
             </div>
           </div>
 
-          {/* Description */}
-          <div>
-            <h3 className="text-2xl font-bold mb-4">About this property</h3>
-            <div className="prose max-w-none text-muted leading-relaxed whitespace-pre-wrap">
+          {/* Description Card */}
+          <div className="bg-card border border-border/80 rounded-2xl p-6 sm:p-8 shadow-2xs">
+            <h3 className="text-xl font-bold text-foreground mb-4">About this home</h3>
+            <div className="prose max-w-none text-muted leading-relaxed whitespace-pre-wrap text-sm sm:text-base">
               {property.description}
             </div>
           </div>
           
           {/* Address details */}
-          <div>
-            <h3 className="text-xl font-bold mb-4">Location</h3>
-            <div className="bg-card border border-border rounded-xl p-5 text-muted flex items-start gap-3">
+          <div className="bg-card border border-border/80 rounded-2xl p-6 shadow-2xs">
+            <h3 className="text-lg font-bold text-foreground mb-3">Location & Neighborhood</h3>
+            <div className="p-4 rounded-xl bg-stone-50 border border-stone-100 text-muted flex items-start gap-3">
               <MapPin className="h-5 w-5 mt-0.5 flex-shrink-0 text-primary" />
-              <p className="leading-relaxed">{property.address}</p>
+              <p className="leading-relaxed text-sm font-medium text-foreground">{property.address}</p>
             </div>
           </div>
+
           {/* Reviews section */}
           <PropertyReviews 
             propertyId={property.id} 
@@ -167,20 +171,20 @@ export default async function PropertyDetailsPage({ params }: PageProps) {
 
         {/* Action Sidebar */}
         <div className="lg:col-span-1">
-          <div className="bg-card border border-border rounded-xl p-6 shadow-sm sticky top-24">
-            <h3 className="text-xl font-bold mb-6">Rental Details</h3>
+          <div className="bg-card border border-border/80 rounded-2xl p-6 sm:p-7 shadow-md sticky top-24">
+            <h3 className="text-xl font-extrabold text-foreground mb-6 tracking-tight">Rental Summary</h3>
             
-            <div className="space-y-4 mb-8">
-              <div className="flex justify-between pb-4 border-b border-border/50">
-                <span className="text-muted">Monthly Rent</span>
-                <span className="font-semibold text-foreground">{formatCurrency(property.rent)}</span>
+            <div className="space-y-3.5 mb-7 text-sm">
+              <div className="flex justify-between pb-3 border-b border-border/60">
+                <span className="text-muted font-medium">Monthly Rent</span>
+                <span className="font-bold text-foreground text-base">{formatCurrency(property.rent)}</span>
               </div>
-              <div className="flex justify-between pb-4 border-b border-border/50">
-                <span className="text-muted">Security Deposit</span>
-                <span className="font-semibold text-foreground">{formatCurrency(property.securityDeposit)}</span>
+              <div className="flex justify-between pb-3 border-b border-border/60">
+                <span className="text-muted font-medium">Security Deposit</span>
+                <span className="font-bold text-foreground">{formatCurrency(property.securityDeposit)}</span>
               </div>
-              <div className="flex justify-between">
-                <span className="text-muted">Available From</span>
+              <div className="flex justify-between pb-3 border-b border-border/60">
+                <span className="text-muted font-medium">Available From</span>
                 <span className="font-semibold text-foreground">
                   {new Date(property.availableFrom).toLocaleDateString(undefined, {
                     year: 'numeric',
@@ -188,6 +192,10 @@ export default async function PropertyDetailsPage({ params }: PageProps) {
                     day: 'numeric'
                   })}
                 </span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-muted font-medium">Brokerage Commission</span>
+                <span className="font-bold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded text-xs">₹0 (Zero)</span>
               </div>
             </div>
 
@@ -204,29 +212,29 @@ export default async function PropertyDetailsPage({ params }: PageProps) {
             {property.isAvailable ? (
               <RentalRequestForm propertyId={property.id} />
             ) : (
-              <div className="bg-muted/10 border border-border rounded-xl p-6 shadow-sm text-center">
-                <h3 className="text-lg font-bold text-foreground mb-2">Unavailable</h3>
-                <p className="text-muted text-sm">This property is currently rented and not accepting new applications.</p>
+              <div className="bg-stone-50 border border-border rounded-xl p-5 text-center">
+                <h3 className="text-base font-bold text-foreground mb-1">Unavailable</h3>
+                <p className="text-muted text-xs leading-relaxed">This property is currently rented and not accepting new applications.</p>
               </div>
             )}
 
-            <div className="mt-8 pt-6 border-t border-border">
-              <h4 className="text-sm font-semibold text-muted uppercase tracking-wider mb-4">Listed By</h4>
-              <div className="flex items-center gap-3">
-                <div className="h-10 w-10 bg-primary/10 text-primary rounded-full flex items-center justify-center font-bold">
+            <div className="mt-8 pt-6 border-t border-border/60">
+              <h4 className="text-xs font-bold text-muted uppercase tracking-wider mb-3">Listed By Verified Owner</h4>
+              <div className="flex items-center gap-3 p-3 rounded-xl bg-stone-50 border border-stone-100">
+                <div className="h-10 w-10 bg-primary-light text-primary rounded-full flex items-center justify-center font-bold text-sm">
                   {property.owner?.name?.charAt(0) || 'O'}
                 </div>
-                <div>
-                  <p className="font-semibold text-foreground">{property.owner?.name || 'Verified Owner'}</p>
+                <div className="min-w-0 flex-grow">
+                  <p className="font-bold text-foreground text-sm truncate">{property.owner?.name || 'Verified Owner'}</p>
                   {property.owner?.isVerified && (
-                    <p className="text-sm text-blue-600 flex items-center mt-0.5 font-medium">
-                      <BadgeCheck className="h-4 w-4 mr-1 text-blue-500" /> Verified Owner
+                    <p className="text-xs text-blue-600 flex items-center mt-0.5 font-semibold">
+                      <BadgeCheck className="h-3.5 w-3.5 mr-1 text-blue-500" /> Verified Owner
                     </p>
                   )}
                 </div>
               </div>
               
-              <div className="mt-6 flex justify-center">
+              <div className="mt-5 flex justify-center">
                 <ReportPropertyButton propertyId={property.id} ownerId={property.ownerId} />
               </div>
             </div>

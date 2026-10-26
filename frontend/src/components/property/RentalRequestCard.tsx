@@ -9,6 +9,7 @@ import { Button } from '@/components/ui/Button';
 import { MapPin, Loader2, Calendar } from 'lucide-react';
 import { api } from '@/lib/api';
 import { RentalRequestChatButton } from '@/components/chat/RentalRequestChatButton';
+import { resolvePrimaryPropertyImage } from '@/lib/property-images';
 
 interface RentalRequestCardProps {
   request: any;
@@ -20,7 +21,7 @@ export const RentalRequestCard = ({ request }: RentalRequestCardProps) => {
   const [error, setError] = useState('');
 
   const property = request.property;
-  const imageUrl = property?.images?.[0]?.url || '/placeholder-property.jpg';
+  const imageUrl = resolvePrimaryPropertyImage(property?.images, property?.id).url;
 
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat('en-IN', {

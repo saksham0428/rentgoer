@@ -10,6 +10,7 @@ import { ReportMessageButton } from '@/components/report/ReportMessageButton';
 import { api } from '@/lib/api';
 import { useConversationRealtime } from '@/hooks/useConversationRealtime';
 import { ConversationListPanel } from '@/components/chat/ConversationListPanel';
+import { resolvePrimaryPropertyImage } from '@/lib/property-images';
 import { 
   Loader2, 
   ArrowLeft, 
@@ -347,7 +348,7 @@ export default function ChatWindowPage() {
   const isTenant = user?.role === 'TENANT';
   const otherUser = isTenant ? conversation?.owner : conversation?.tenant;
   const property = conversation?.property;
-  const propertyImage = property?.images?.[0]?.url || '/placeholder-property.jpg';
+  const propertyImage = resolvePrimaryPropertyImage(property?.images, property?.id).url;
 
   // Helper to format date headers
   const getDateLabel = (dateStr: string) => {

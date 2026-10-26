@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 'use client';
 
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/Button';
@@ -10,15 +10,26 @@ import { api } from '@/lib/api';
 import { PropertyCard } from '@/components/ui/PropertyCard';
 import { RentalRequestCard } from '@/components/property/RentalRequestCard';
 import { Loader2, Heart, ClipboardList, Home, Clock, CheckCircle2, Search, MessageSquare } from 'lucide-react';
+import { getProfileCompletionStatus } from '@/lib/profile';
 
 export default function TenantDashboard() {
-  const { user, loading: authLoading } = useAuth();
+  const { user, loading: authLoading, refreshUser } = useAuth();
   const router = useRouter();
 
   const [favorites, setFavorites] = useState<any[]>([]);
   const [requests, setRequests] = useState<any[]>([]);
   const [dataLoading, setDataLoading] = useState(true);
   const [error, setError] = useState('');
+  const hasRefreshedUserRef = useRef(false);
+
+  const profileStatus = getProfileCompletionStatus(user);
+
+  useEffect(() => {
+    if (!hasRefreshedUserRef.current && user) {
+      hasRefreshedUserRef.current = true;
+      refreshUser();
+    }
+  }, [user, refreshUser]);
 
   useEffect(() => {
     if (authLoading) return;
@@ -88,7 +99,7 @@ export default function TenantDashboard() {
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center bg-card border border-border rounded-xl p-6 shadow-sm gap-4">
         <div>
           <h1 className="text-2xl sm:text-3xl font-bold text-foreground">
-            Welcome back, {user.name.split(' ')[0]}
+            Welcome back, {user.name ? user.name.split(' ')[0] : 'User'}
           </h1>
           <p className="text-muted mt-1">Find your next place to call home.</p>
         </div>
@@ -97,10 +108,10 @@ export default function TenantDashboard() {
           {/* Profile Summary (Compact) */}
           <div className="flex items-center gap-3 bg-muted/10 px-4 py-3 rounded-lg border border-border/50 max-w-full">
             <div className="h-10 w-10 bg-primary/10 text-primary rounded-full flex items-center justify-center font-bold flex-shrink-0">
-              {user.name.charAt(0).toUpperCase()}
+              {user.name ? user.name.charAt(0).toUpperCase() : 'U'}
             </div>
             <div className="min-w-0">
-              <p className="font-semibold text-foreground text-sm leading-tight truncate">{user.name}</p>
+              <p className="font-semibold text-foreground text-sm leading-tight truncate">{user.name || 'Anonymous User'}</p>
               <p className="text-xs text-muted leading-tight truncate">{user.email}</p>
             </div>
           </div>
@@ -275,16 +286,50 @@ export default function TenantDashboard() {
             </div>
           </div>
 
-          <div className="bg-muted/10 border border-border rounded-xl p-6 text-center">
-            <Home className="h-8 w-8 text-muted mx-auto mb-2" />
-            <h3 className="font-semibold text-foreground">Ready to move?</h3>
-            <p className="text-sm text-muted mt-1 mb-4">Complete your profile to increase your chances of request approval.</p>
-            <Link href="/profile">
-              <Button variant="outline" size="sm" className="w-full">
-                Edit Profile
-              </Button>
-            </Link>
-          </div>
+          {!profileStatus.isComplete && (
+            <div className="bg-card border border-border/80 rounded-2xl p-6 shadow-2xs">
+              <div className="flex items-center justify-between mb-2.5">
+                <span className="text-xs font-bold text-primary tracking-wide uppercase">Profile Checklist</span>
+                <span className="text-xs font-bold text-foreground bg-primary/10 px-2.5 py-0.5 rounded-full">
+                  {profileStatus.completedCount} of {profileStatus.totalItems} ({profileStatus.percentage}%)
+                </span>
+              </div>
+
+              <h3 className="text-base font-bold text-foreground">Complete your renter profile</h3>
+              <p className="text-xs text-muted mt-1 mb-4 leading-relaxed">
+                Property owners prioritize verified inquiries with complete preferences and contact information.
+              </p>
+
+              {/* Progress bar */}
+              <div className="w-full bg-muted/20 rounded-full h-2 mb-4 overflow-hidden">
+                <div
+                  className="bg-primary h-2 rounded-full transition-all duration-500 ease-out"
+                  style={{ width: `${profileStatus.percentage}%` }}
+                />
+              </div>
+
+              {/* Missing items checklist */}
+              {profileStatus.missingItems.length > 0 && (
+                <div className="mb-5 space-y-2">
+                  <p className="text-[11px] font-semibold text-muted uppercase tracking-wider">Remaining to complete:</p>
+                  <ul className="space-y-1.5">
+                    {profileStatus.missingItems.map((item) => (
+                      <li key={item.id} className="text-xs text-foreground/80 flex items-center gap-2">
+                        <span className="h-1.5 w-1.5 rounded-full bg-amber-500 flex-shrink-0" />
+                        <span>{item.label}</span>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+
+              <Link href="/profile">
+                <Button variant="primary" size="sm" className="w-full font-semibold">
+                  Complete Profile
+                </Button>
+              </Link>
+            </div>
+          )}
         </div>
       </div>
     </div>

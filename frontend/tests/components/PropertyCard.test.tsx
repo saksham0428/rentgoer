@@ -68,10 +68,13 @@ describe('PropertyCard component', () => {
     expect(img).toHaveAttribute('src', 'https://images.example.com/prop-101.jpg');
   });
 
-  it('renders fallback when no images are provided', () => {
+  it('renders fallback image and illustrative badge when no images are provided', () => {
     render(<PropertyCard {...mockProperty} images={[]} />);
 
-    expect(screen.getByText('No image available')).toBeInTheDocument();
+    expect(screen.getByText('Illustrative image')).toBeInTheDocument();
+    const img = screen.getByRole('img');
+    expect(img).toBeInTheDocument();
+    expect(img.getAttribute('src')).toMatch(/\/images\/fallback-/);
   });
 
   it('renders verified badge when isVerified is true', () => {

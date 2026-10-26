@@ -123,59 +123,63 @@ export default function OwnerDashboard() {
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10 w-full flex-grow flex flex-col">
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-end mb-8 gap-4">
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-end mb-8 gap-4 pb-5 border-b border-border/60">
         <div>
-          <h1 className="text-3xl font-bold text-foreground tracking-tight">Owner Dashboard</h1>
-          <p className="text-muted mt-2">Manage your property listings and availability.</p>
+          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-semibold bg-primary-light text-primary mb-2.5">
+            <span className="w-1.5 h-1.5 rounded-full bg-primary" />
+            <span>Owner Portal</span>
+          </div>
+          <h1 className="text-3xl sm:text-4xl font-extrabold text-foreground tracking-tight">Owner Dashboard</h1>
+          <p className="text-muted mt-1.5 text-sm sm:text-base">Manage your property listings and availability.</p>
         </div>
         <div className="flex flex-wrap items-center gap-3">
           <Link href="/owner/requests">
-            <Button variant="outline" className="flex items-center gap-2">
+            <Button variant="outline" className="flex items-center gap-2 font-semibold">
               <ClipboardList className="h-4 w-4" />
-              Requests
+              <span>Rental Requests</span>
             </Button>
           </Link>
           <Link href="/owner/properties/new">
-            <Button className="flex items-center gap-2">
+            <Button className="flex items-center gap-2 font-semibold">
               <Plus className="h-4 w-4" />
-              Add Property
+              <span>Add Property</span>
             </Button>
           </Link>
         </div>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-10">
-        <div className="bg-card border border-border rounded-xl p-6 shadow-sm md:col-span-1 flex flex-col justify-between">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5 mb-10">
+        <div className="bg-card border border-border/80 rounded-2xl p-6 shadow-2xs flex flex-col justify-between">
           <div>
-            <h3 className="text-sm font-semibold text-muted uppercase tracking-wider mb-2">Verification Status</h3>
+            <h3 className="text-xs font-bold text-muted uppercase tracking-wider mb-2">Owner Verification</h3>
             {(user as any)?.isVerified ? (
-              <div className="flex items-center text-blue-600 font-bold text-xl gap-2 mt-2">
-                <ShieldCheck className="h-6 w-6" /> VERIFIED
+              <div className="flex items-center text-blue-600 font-extrabold text-lg gap-2 mt-2">
+                <ShieldCheck className="h-5 w-5" /> VERIFIED
               </div>
             ) : ownerVerifReq ? (
-              <div className="flex items-center text-amber-500 font-bold text-xl gap-2 mt-2">
-                <ShieldEllipsis className="h-6 w-6" /> PENDING
+              <div className="flex items-center text-amber-600 font-extrabold text-lg gap-2 mt-2">
+                <ShieldEllipsis className="h-5 w-5" /> PENDING
               </div>
             ) : ownerRejectedReq ? (
               <div className="flex flex-col mt-2">
-                <div className="flex items-center text-danger font-bold text-xl gap-2">
-                  <ShieldAlert className="h-6 w-6" /> REJECTED
+                <div className="flex items-center text-danger font-bold text-base gap-2">
+                  <ShieldAlert className="h-5 w-5" /> REJECTED
                 </div>
                 <p className="text-xs text-muted mt-2 mb-3 leading-relaxed">
                   Reason: {ownerRejectedReq.rejectionReason}
                 </p>
-                <Button variant="outline" size="sm" onClick={requestOwnerVerification} disabled={requestingVerif}>
-                  {requestingVerif ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <ShieldCheck className="h-4 w-4 mr-2" />}
+                <Button variant="outline" size="sm" onClick={requestOwnerVerification} disabled={requestingVerif} className="w-full">
+                  {requestingVerif ? <Loader2 className="h-3.5 w-3.5 animate-spin mr-1.5" /> : <ShieldCheck className="h-3.5 w-3.5 mr-1.5" />}
                   Request Again
                 </Button>
               </div>
             ) : (
               <div className="flex flex-col mt-2">
-                <div className="flex items-center text-muted-foreground font-bold text-xl gap-2 mb-3">
-                  <ShieldX className="h-6 w-6" /> UNVERIFIED
+                <div className="flex items-center text-muted font-bold text-base gap-2 mb-3">
+                  <ShieldX className="h-5 w-5" /> UNVERIFIED
                 </div>
-                <Button variant="outline" size="sm" onClick={requestOwnerVerification} disabled={requestingVerif}>
-                  {requestingVerif ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <ShieldCheck className="h-4 w-4 mr-2" />}
+                <Button variant="outline" size="sm" onClick={requestOwnerVerification} disabled={requestingVerif} className="w-full font-medium">
+                  {requestingVerif ? <Loader2 className="h-3.5 w-3.5 animate-spin mr-1.5" /> : <ShieldCheck className="h-3.5 w-3.5 mr-1.5 text-primary" />}
                   Request Verification
                 </Button>
               </div>
@@ -183,30 +187,36 @@ export default function OwnerDashboard() {
           </div>
         </div>
 
-        <div className="bg-card border border-border rounded-xl p-6 shadow-sm">
-          <h3 className="text-sm font-semibold text-muted uppercase tracking-wider mb-2">Total Properties</h3>
-          <p className="text-3xl font-extrabold text-foreground">{properties.length}</p>
+        <div className="bg-card border border-border/80 rounded-2xl p-6 shadow-2xs">
+          <h3 className="text-xs font-bold text-muted uppercase tracking-wider mb-2">Total Properties</h3>
+          <p className="text-3xl font-black text-foreground">{properties.length}</p>
+          <p className="text-xs text-muted mt-1">Listed under your account</p>
         </div>
-        <div className="bg-card border border-border rounded-xl p-6 shadow-sm">
-          <h3 className="text-sm font-semibold text-muted uppercase tracking-wider mb-2">Available</h3>
-          <p className="text-3xl font-extrabold text-success">{availableCount}</p>
+        <div className="bg-card border border-border/80 rounded-2xl p-6 shadow-2xs">
+          <h3 className="text-xs font-bold text-muted uppercase tracking-wider mb-2">Available</h3>
+          <p className="text-3xl font-black text-emerald-700">{availableCount}</p>
+          <p className="text-xs text-muted mt-1">Active on marketplace</p>
         </div>
-        <div className="bg-card border border-border rounded-xl p-6 shadow-sm">
-          <h3 className="text-sm font-semibold text-muted uppercase tracking-wider mb-2">Rented / Unavailable</h3>
-          <p className="text-3xl font-extrabold text-muted">{unavailableCount}</p>
+        <div className="bg-card border border-border/80 rounded-2xl p-6 shadow-2xs">
+          <h3 className="text-xs font-bold text-muted uppercase tracking-wider mb-2">Rented / Unavailable</h3>
+          <p className="text-3xl font-black text-muted">{unavailableCount}</p>
+          <p className="text-xs text-muted mt-1">Currently occupied</p>
         </div>
       </div>
 
       {properties.length === 0 ? (
-        <div className="text-center py-24 bg-card rounded-xl border border-border border-dashed my-auto">
+        <div className="text-center py-20 bg-card rounded-2xl border border-border/80 my-auto shadow-2xs p-8 max-w-xl mx-auto flex flex-col items-center justify-center">
+          <div className="w-14 h-14 rounded-full bg-primary-light text-primary flex items-center justify-center mb-4">
+            <Plus className="h-6 w-6" />
+          </div>
           <h3 className="text-xl font-bold text-foreground">You haven&apos;t listed any properties yet.</h3>
-          <p className="mt-2 text-muted mb-8 max-w-md mx-auto">
-            Start reaching thousands of tenants directly without paying any brokerage fees.
+          <p className="mt-2 text-muted text-sm mb-6 max-w-md mx-auto leading-relaxed">
+            Start reaching thousands of direct tenants without paying any brokerage fees.
           </p>
           <Link href="/owner/properties/new">
-            <Button size="lg" className="flex items-center gap-2 mx-auto">
-              <Plus className="h-5 w-5" />
-              Add your first property
+            <Button size="lg" className="flex items-center gap-2 font-semibold">
+              <Plus className="h-4 w-4" />
+              <span>Add your first property</span>
             </Button>
           </Link>
         </div>
@@ -218,7 +228,7 @@ export default function OwnerDashboard() {
             const propRejectedReq = verificationRequests.find(r => r.type === 'PROPERTY' && r.propertyId === property.id && r.status === 'REJECTED');
             
             return (
-              <div key={property.id} className="relative group flex flex-col h-full bg-card rounded-xl border border-border overflow-hidden">
+              <div key={property.id} className="relative group flex flex-col h-full bg-card rounded-2xl border border-border/80 overflow-hidden shadow-2xs">
                 <PropertyCard
                   id={property.id}
                   title={property.title}
@@ -235,28 +245,28 @@ export default function OwnerDashboard() {
                 />
                 
                 {/* Verification Action Bar */}
-                <div className="p-3 bg-muted/30 border-t border-border mt-auto flex items-center justify-between">
+                <div className="p-3 bg-stone-50 border-t border-border/80 mt-auto flex items-center justify-between text-xs">
                   {isPropVerified ? (
-                    <span className="text-xs font-bold text-blue-600 flex items-center gap-1">
+                    <span className="font-bold text-blue-600 flex items-center gap-1">
                       <ShieldCheck className="h-3.5 w-3.5" /> Verified
                     </span>
                   ) : propVerifReq ? (
-                    <span className="text-xs font-bold text-amber-600 flex items-center gap-1">
+                    <span className="font-bold text-amber-600 flex items-center gap-1">
                       <ShieldEllipsis className="h-3.5 w-3.5" /> Pending Verification
                     </span>
                   ) : (
                     <div className="flex items-center justify-between w-full">
                       {propRejectedReq ? (
-                        <span className="text-xs font-bold text-danger flex items-center gap-1 mr-2" title={propRejectedReq.rejectionReason}>
+                        <span className="font-bold text-danger flex items-center gap-1 mr-2" title={propRejectedReq.rejectionReason}>
                           <ShieldAlert className="h-3.5 w-3.5" /> Rejected
                         </span>
                       ) : (
-                        <span className="text-xs text-muted">Unverified</span>
+                        <span className="text-muted font-medium">Unverified</span>
                       )}
                       <Button 
                         variant="secondary" 
                         size="sm" 
-                        className="h-7 text-xs py-0 px-2"
+                        className="h-7 text-xs py-0 px-2.5 font-medium"
                         onClick={() => requestPropertyVerification(property.id)}
                         disabled={propVerifLoading[property.id]}
                       >
@@ -267,9 +277,9 @@ export default function OwnerDashboard() {
                   )}
                 </div>
 
-                <div className="absolute top-2 right-2 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                <div className="absolute top-3 right-3 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity z-20">
                   <Link href={`/owner/properties/${property.id}/edit`}>
-                    <div className="bg-white/90 hover:bg-white text-gray-800 p-2 rounded-full shadow-md transition-colors backdrop-blur-sm" title="Edit Property">
+                    <div className="bg-white/95 hover:bg-white text-stone-800 p-2 rounded-full shadow-md transition-all backdrop-blur-xs border border-black/5 hover:scale-105" title="Edit Property">
                       <Edit className="h-4 w-4" />
                     </div>
                   </Link>

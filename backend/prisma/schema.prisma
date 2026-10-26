@@ -39,6 +39,12 @@ model User {
   verifiedProperties    Property[]            @relation("AdminVerifiedProperties")
   ownedVerifications    VerificationRequest[] @relation("OwnerVerificationRequests")
   reviewedVerifications VerificationRequest[] @relation("AdminReviewedVerificationRequests")
+
+  // Renter Profile Preferences
+  bio                 String?
+  preferredCity       String?
+  monthlyBudget       Float?
+  moveInTimeline      String?
 }
 
 model Property {

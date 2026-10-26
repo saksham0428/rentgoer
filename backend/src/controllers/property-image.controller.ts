@@ -17,6 +17,14 @@ export const uploadImages = async (req: Request, res: Response): Promise<void> =
       return;
     }
 
+    if (process.env.DISABLE_PRODUCTION_STORAGE_WRITES === 'true') {
+      res.status(503).json({
+        success: false,
+        message: 'Storage uploads are disabled in local development to protect production storage.',
+      });
+      return;
+    }
+
     const files = req.files as Express.Multer.File[];
     if (!files || files.length === 0) {
       res.status(400).json({ success: false, message: 'No images provided' });
@@ -168,6 +176,18 @@ export const deleteImage = async (req: Request, res: Response): Promise<void> =>
 
     if (image.propertyId !== propertyId) {
       res.status(400).json({ success: false, message: 'Image does not belong to this property' });
+      return;
+    }
+
+    // In local development with disabled production storage writes, delete record from DB only
+    if (process.env.DISABLE_PRODUCTION_STORAGE_WRITES === 'true') {
+      await prisma.propertyImage.delete({
+        where: { id: imageId },
+      });
+      res.status(200).json({
+        success: true,
+        message: 'Property image deleted from database (storage write skipped in development)',
+      });
       return;
     }
 

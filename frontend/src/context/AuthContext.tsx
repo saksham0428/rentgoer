@@ -10,6 +10,11 @@ export interface User {
   email: string;
   role: 'TENANT' | 'OWNER' | 'ADMIN';
   phone?: string | null;
+  avatarUrl?: string | null;
+  bio?: string | null;
+  preferredCity?: string | null;
+  monthlyBudget?: number | null;
+  moveInTimeline?: string | null;
   isVerified?: boolean;
   createdAt?: string;
 }

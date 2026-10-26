@@ -71,7 +71,11 @@ export function getSafeBackendUrl(options?: {
     options?.isTestMode ??
     (process.env.RENTGOER_TEST_MODE === 'true');
 
-  const raw = options?.rawUrl ?? process.env.NEXT_PUBLIC_BACKEND_URL;
+  const raw =
+    options?.rawUrl ??
+    (isTest
+      ? (process.env.TEST_BACKEND_URL || process.env.NEXT_PUBLIC_BACKEND_URL)
+      : process.env.NEXT_PUBLIC_BACKEND_URL);
 
   if (isTest) {
     return validateTestBackendUrl(raw);
