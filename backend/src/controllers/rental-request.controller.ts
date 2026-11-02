@@ -486,34 +486,63 @@ export const rejectRequest = async (req: Request, res: Response): Promise<void> 
 
     const requestId = req.params.id as string;
 
-    const request = await prisma.rentalRequest.findUnique({
-      where: { id: requestId },
-      include: { property: true }
+    let notificationToEmit: any = null;
+
+    const result = await prisma.$transaction(async (tx) => {
+      const request = await tx.rentalRequest.findUnique({
+        where: { id: requestId },
+        include: { property: true }
+      });
+
+      if (!request) {
+        throw new Error('NOT_FOUND');
+      }
+
+      if (request.property.ownerId !== ownerId) {
+        throw new Error('FORBIDDEN');
+      }
+
+      if (request.status !== 'PENDING') {
+        throw new Error('CONFLICT_STATUS');
+      }
+
+      const updatedRequest = await tx.rentalRequest.update({
+        where: { id: requestId },
+        data: { status: 'REJECTED' }
+      });
+
+      const notification = await tx.notification.create({
+        data: {
+          userId: request.tenantId,
+          type: 'REQUEST_REJECTED',
+          title: 'Request Rejected',
+          message: `Your rental request for "${request.property.title}" was not accepted.`,
+          referenceId: requestId
+        }
+      });
+
+      return { updatedRequest, notification };
     });
 
-    if (!request) {
+    notificationToEmit = result.notification;
+
+    if (notificationToEmit) {
+      import('../lib/realtime-notifications')
+        .then(m => m.emitNotification(notificationToEmit.userId, notificationToEmit))
+        .catch(console.error);
+    }
+
+    res.status(200).json({ success: true, data: result.updatedRequest });
+  } catch (error: any) {
+    if (error.message === 'NOT_FOUND') {
       res.status(404).json({ success: false, message: 'Request not found' });
-      return;
-    }
-
-    if (request.property.ownerId !== ownerId) {
+    } else if (error.message === 'FORBIDDEN') {
       res.status(403).json({ success: false, message: 'Forbidden' });
-      return;
-    }
-
-    if (request.status !== 'PENDING') {
+    } else if (error.message === 'CONFLICT_STATUS') {
       res.status(409).json({ success: false, message: 'Only PENDING requests can be rejected' });
-      return;
+    } else {
+      console.error('Error rejecting request:', error);
+      res.status(500).json({ success: false, message: 'Internal server error' });
     }
-
-    const updatedRequest = await prisma.rentalRequest.update({
-      where: { id: requestId },
-      data: { status: 'REJECTED' }
-    });
-
-    res.status(200).json({ success: true, data: updatedRequest });
-  } catch (error) {
-    console.error('Error rejecting request:', error);
-    res.status(500).json({ success: false, message: 'Internal server error' });
   }
 };

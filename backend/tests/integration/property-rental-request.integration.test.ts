@@ -181,4 +181,94 @@ describe('Property & Rental Request PostgreSQL Integration Tests', () => {
     expect(joinedConversation?.rentalRequest?.status).toBe('ACCEPTED');
     expect(joinedConversation?.messages).toHaveLength(2);
   });
+
+  it('owner explicitly rejects a pending rental request, persisting REQUEST_REJECTED notification in PostgreSQL', async () => {
+    const ts = Date.now();
+    const property2 = await prisma.property.create({
+      data: {
+        ownerId,
+        title: `Rejection Test Villa ${ts}`,
+        description: 'Testing explicit rejection flow in PostgreSQL',
+        rent: 55000,
+        securityDeposit: 110000,
+        city: 'Mumbai',
+        locality: 'Juhu',
+        address: '202 Palm Grove',
+        bedrooms: 3,
+        bathrooms: 3,
+        propertyType: 'HOUSE',
+        furnishedStatus: 'FURNISHED',
+        availableFrom: new Date(),
+        isAvailable: true,
+      },
+    });
+    context.trackProperty(property2.id);
+
+    const tenant2 = await prisma.user.create({
+      data: {
+        name: 'Second Integration Tenant',
+        email: `tenant2_${ts}@test.com`,
+        passwordHash: '$2b$10$dummyHashTenant21234567890123',
+        role: 'TENANT',
+      },
+    });
+    context.trackUser(tenant2.id);
+
+    const pendingRequest = await prisma.rentalRequest.create({
+      data: {
+        propertyId: property2.id,
+        tenantId: tenant2.id,
+        message: 'Interested in this villa.',
+        status: 'PENDING',
+      },
+    });
+    context.trackRentalRequest(pendingRequest.id);
+
+    // Call rejectRequest controller
+    const { rejectRequest } = await import('../../src/controllers/rental-request.controller');
+
+    let statusCode = 200;
+    let responseData: any = null;
+    const req: any = {
+      user: { id: ownerId, role: 'OWNER' },
+      params: { id: pendingRequest.id },
+    };
+    const res: any = {
+      status(code: number) { statusCode = code; return this; },
+      json(data: any) { responseData = data; return this; },
+    };
+
+    await rejectRequest(req, res);
+
+    expect(statusCode).toBe(200);
+    expect(responseData.success).toBe(true);
+    expect(responseData.data.status).toBe('REJECTED');
+
+    // Verify database state directly
+    const updated = await prisma.rentalRequest.findUnique({ where: { id: pendingRequest.id } });
+    expect(updated?.status).toBe('REJECTED');
+
+    // Verify notification was created in PostgreSQL
+    const notifs = await prisma.notification.findMany({
+      where: { userId: tenant2.id, referenceId: pendingRequest.id },
+    });
+    expect(notifs).toHaveLength(1);
+    expect(notifs[0].type).toBe('REQUEST_REJECTED');
+    expect(notifs[0].title).toBe('Request Rejected');
+    expect(notifs[0].message).toContain(`Rejection Test Villa ${ts}`);
+    expect(notifs[0].isRead).toBe(false);
+    context.trackNotification(notifs[0].id);
+
+    // Test idempotency: second rejection attempt fails with 409 and creates no duplicate notification
+    statusCode = 200;
+    responseData = null;
+    await rejectRequest(req, res);
+    expect(statusCode).toBe(409);
+    expect(responseData.message).toBe('Only PENDING requests can be rejected');
+
+    const notifsAfter = await prisma.notification.findMany({
+      where: { userId: tenant2.id, referenceId: pendingRequest.id },
+    });
+    expect(notifsAfter).toHaveLength(1);
+  });
 });
