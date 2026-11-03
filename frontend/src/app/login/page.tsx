@@ -5,7 +5,7 @@ import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
-import { Loader2, CheckCircle2 } from 'lucide-react';
+import { Loader2, CheckCircle2, Building2, User } from 'lucide-react';
 import { api } from '@/lib/api';
 import { useAuth } from '@/context/AuthContext';
 
@@ -13,6 +13,8 @@ function LoginContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const message = searchParams.get('message');
+  const roleParam = searchParams.get('role');
+  const isOwnerIntent = roleParam === 'OWNER' || searchParams.get('redirect')?.startsWith('/owner');
   const { refreshUser } = useAuth();
 
   const [loading, setLoading] = useState(false);
@@ -72,15 +74,26 @@ function LoginContent() {
   return (
     <div className="flex-grow flex items-center justify-center py-10 sm:py-16 px-4 sm:px-6 lg:px-8 bg-background">
       <div className="max-w-md w-full space-y-6 sm:space-y-8 bg-card p-7 sm:p-10 rounded-2xl border border-border/80 shadow-md">
+        
+        {/* Header Section */}
         <div className="text-center">
           <div className="w-12 h-12 rounded-2xl bg-primary-light text-primary flex items-center justify-center mx-auto mb-4 font-black text-xl shadow-2xs">
-            RG
+            {isOwnerIntent ? <Building2 className="h-6 w-6" /> : <User className="h-6 w-6" />}
           </div>
-          <h2 className="text-center text-3xl font-extrabold text-foreground tracking-tight">
-            Welcome back
-          </h2>
-          <p className="mt-2 text-center text-sm text-muted">
-            Log in to manage your properties or rental requests.
+
+          {isOwnerIntent && (
+            <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold mb-3 bg-muted/10 text-primary">
+              <span>Owner Portal</span>
+            </div>
+          )}
+
+          <h1 className="text-center text-2xl sm:text-3xl font-extrabold text-foreground tracking-tight">
+            {isOwnerIntent ? 'Owner Sign In' : 'Welcome back'}
+          </h1>
+          <p className="mt-2 text-center text-xs sm:text-sm text-muted leading-relaxed">
+            {isOwnerIntent
+              ? 'Sign in to access your Owner Dashboard and manage your properties.'
+              : 'Log in to manage your properties, saved listings, or rental requests.'}
           </p>
         </div>
 
@@ -97,7 +110,7 @@ function LoginContent() {
           </div>
         )}
 
-        <form className="mt-8 space-y-6" onSubmit={handleSubmit}>
+        <form className="mt-6 space-y-5" onSubmit={handleSubmit}>
           <div className="space-y-4">
             <div>
               <Input
@@ -133,12 +146,15 @@ function LoginContent() {
               fullWidth
               size="lg"
               disabled={loading}
+              className="bg-primary hover:bg-primary-hover"
             >
               {loading ? (
                 <>
                   <Loader2 className="animate-spin -ml-1 mr-2 h-4 w-4" />
                   Logging in...
                 </>
+              ) : isOwnerIntent ? (
+                'Sign In as Owner'
               ) : (
                 'Log in'
               )}
@@ -146,14 +162,31 @@ function LoginContent() {
           </div>
         </form>
 
-        <div className="text-center">
-          <p className="text-sm text-muted">
+        {/* Footer Navigation */}
+        <div className="pt-2 text-center text-xs sm:text-sm text-muted space-y-2 border-t border-border/60">
+          <p>
             Don&apos;t have an account?{' '}
-            <Link href="/register" className="font-medium text-primary hover:text-primary-hover">
-              Sign up
+            <Link
+              href={isOwnerIntent ? '/register?role=OWNER' : '/register'}
+              className="font-semibold text-primary hover:text-primary-hover"
+            >
+              {isOwnerIntent ? 'Register as Property Owner' : 'Sign up'}
             </Link>
           </p>
+
+          <div>
+            {isOwnerIntent ? (
+              <Link href="/login" className="text-muted hover:text-foreground text-xs transition-colors">
+                Looking to rent instead? Tenant Sign In
+              </Link>
+            ) : (
+              <Link href="/login?role=OWNER" className="text-muted hover:text-foreground text-xs transition-colors">
+                Are you a property owner? Owner Sign In
+              </Link>
+            )}
+          </div>
         </div>
+
       </div>
     </div>
   );
