@@ -12,6 +12,8 @@
     "migrate:dev:status": "node --env-file=.env.development.local ./node_modules/prisma/build/index.js migrate status",
     "prisma:staging:verify": "tsx src/scripts/verify-staging-target.ts",
     "prisma:production:verify": "tsx src/scripts/verify-production-target.ts",
+    "cleanup:production:dry-run": "tsx src/scripts/cleanup-production-test-data.ts",
+    "cleanup:production:execute": "tsx src/scripts/cleanup-production-test-data.ts --confirm",
     "migrate:staging:deploy": "tsx src/scripts/verify-staging-target.ts && node --env-file=.env.staging.local ./node_modules/prisma/build/index.js migrate deploy",
     "migrate:staging:status": "tsx src/scripts/verify-staging-target.ts && node --env-file=.env.staging.local ./node_modules/prisma/build/index.js migrate status",
     "test": "vitest run",
