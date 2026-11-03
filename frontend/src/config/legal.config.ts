@@ -58,3 +58,4 @@ export const legalConfig: BusinessConfig = {
   isRegisteredEntityConfigured: Boolean(rawEntityName && rawAddress),
   isGrievanceOfficerConfigured: Boolean(rawGrievanceName && (rawGrievanceEmail || rawSupportEmail)),
 };
+

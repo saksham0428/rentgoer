@@ -247,25 +247,33 @@ export default function ContactGrievancesPage() {
             <div>
               <h3 className="font-bold text-foreground text-base mb-2">Escalation Process & Timelines</h3>
               <p>
-                RentGoer adheres to standard procedural timelines for consumer grievances and data principal inquiries:
+                In compliance with Rule 5(3) of the Consumer Protection (E-Commerce) Rules, 2020 and Rule 3(2) of the
+                Information Technology (Intermediary Guidelines and Digital Media Ethics Code) Rules, 2021, RentGoer
+                maintains the following grievance redressal schedule:
               </p>
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mt-4">
                 <div className="bg-muted/10 rounded-xl p-4 text-center">
                   <div className="text-2xl font-black text-primary">48 Hours</div>
-                  <div className="text-xs font-semibold text-foreground mt-1">Acknowledgment</div>
-                  <div className="text-xs text-muted mt-1">Receipt confirmation and ticket number issued.</div>
+                  <div className="text-xs font-semibold text-foreground mt-1">Statutory Acknowledgment</div>
+                  <div className="text-xs text-muted mt-1">
+                    Receipt confirmation and ticket number issued within 48 hours as mandated by law.
+                  </div>
                 </div>
 
                 <div className="bg-muted/10 rounded-xl p-4 text-center">
                   <div className="text-2xl font-black text-primary">7 Days</div>
-                  <div className="text-xs font-semibold text-foreground mt-1">Preliminary Review</div>
-                  <div className="text-xs text-muted mt-1">Investigation and initial response provided.</div>
+                  <div className="text-xs font-semibold text-foreground mt-1">Internal Target Review</div>
+                  <div className="text-xs text-muted mt-1">
+                    RentGoer internal operational target for preliminary inquiry and user communication.
+                  </div>
                 </div>
 
                 <div className="bg-muted/10 rounded-xl p-4 text-center">
                   <div className="text-2xl font-black text-primary">30 Days</div>
-                  <div className="text-xs font-semibold text-foreground mt-1">Final Resolution</div>
-                  <div className="text-xs text-muted mt-1">Formal determination and resolution closure.</div>
+                  <div className="text-xs font-semibold text-foreground mt-1">Statutory Redressal</div>
+                  <div className="text-xs text-muted mt-1">
+                    Complete resolution and formal determination within 1 month (30 days) of complaint receipt.
+                  </div>
                 </div>
               </div>
             </div>
@@ -324,3 +332,4 @@ export default function ContactGrievancesPage() {
     </div>
   );
 }
+

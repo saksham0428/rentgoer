@@ -81,6 +81,40 @@ export default function OwnerOnboardingPage() {
     );
   }
 
+  // View for Authenticated ADMIN
+  if (user && user.role === 'ADMIN') {
+    return (
+      <div className="bg-background min-h-[75vh] py-12 sm:py-20 flex items-center justify-center">
+        <div className="max-w-xl mx-auto px-4 text-center">
+          <div className="w-16 h-16 rounded-2xl bg-primary-light text-primary flex items-center justify-center mx-auto mb-6 shadow-xs">
+            <Building2 className="h-8 w-8" />
+          </div>
+          <h1 className="text-2xl sm:text-3xl font-extrabold text-foreground tracking-tight">
+            Administrator Account
+          </h1>
+          <p className="mt-3 text-muted text-sm leading-relaxed max-w-md mx-auto">
+            You are currently signed in with platform Administrator privileges. Property listings, verifications,
+            and moderation are managed through the dedicated Admin Portal.
+          </p>
+
+          <div className="mt-8 flex flex-col sm:flex-row items-center justify-center gap-3">
+            <Link href="/admin">
+              <Button size="lg" className="w-full sm:w-auto">
+                <ShieldCheck className="h-4 w-4 mr-2" />
+                Go to Admin Portal
+              </Button>
+            </Link>
+            <Link href="/properties">
+              <Button variant="outline" size="lg" className="w-full sm:w-auto">
+                Browse Marketplace
+              </Button>
+            </Link>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   // View for Authenticated TENANT
   if (user && user.role === 'TENANT') {
     return (
@@ -296,3 +330,4 @@ export default function OwnerOnboardingPage() {
     </div>
   );
 }
+

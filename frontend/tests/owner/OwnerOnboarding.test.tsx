@@ -105,4 +105,20 @@ describe('OwnerOnboardingPage', () => {
     expect(screen.getByRole('link', { name: /go to owner dashboard/i })).toHaveAttribute('href', '/owner');
     expect(screen.getByRole('link', { name: /list a new property/i })).toHaveAttribute('href', '/owner/properties/new');
   });
+
+  it('renders administrator status card when signed in as ADMIN', () => {
+    mockAuth.user = {
+      id: 'admin-001',
+      name: 'Super Admin',
+      email: 'admin@rentgoer.com',
+      role: 'ADMIN',
+    };
+    mockAuth.loading = false;
+    render(<OwnerOnboardingPage />);
+
+    expect(screen.getByRole('heading', { name: /administrator account/i })).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: /go to admin portal/i })).toHaveAttribute('href', '/admin');
+    expect(screen.getByRole('link', { name: /browse marketplace/i })).toHaveAttribute('href', '/properties');
+  });
 });
+
