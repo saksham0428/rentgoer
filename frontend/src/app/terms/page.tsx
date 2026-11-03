@@ -74,7 +74,7 @@ export default function TermsOfServicePage() {
             <a href="#liability" className="text-primary hover:underline">11. Disclaimers & Limitation of Liability</a>
             <a href="#suspension" className="text-primary hover:underline">12. Account Suspension & Termination</a>
             <a href="#governing-law" className="text-primary hover:underline">13. Governing Law & Dispute Jurisdiction</a>
-            <a href="#grievance-contact" className="text-primary hover:underline">14. Grievance Redressal Mechanism</a>
+            <a href="#grievance-contact" className="text-primary hover:underline">14. Grievance Redressal & Intermediary Compliance</a>
           </div>
         </div>
 
@@ -263,12 +263,18 @@ export default function TermsOfServicePage() {
 
         {/* 14. Grievance Contact */}
         <section id="grievance-contact" className="mb-12 scroll-mt-24">
-          <h2 className="text-xl font-bold text-foreground mb-3">14. Grievance Redressal Mechanism</h2>
+          <h2 className="text-xl font-bold text-foreground mb-3">14. Grievance Redressal & Intermediary Compliance</h2>
           <div className="bg-card border border-border/70 rounded-xl p-6 text-sm text-muted leading-relaxed space-y-3">
             <p>
-              In compliance with the Information Technology Act, 2000 and consumer protection guidelines, RentGoer maintains
-              a dedicated grievance redressal procedure. Details on submitting formal complaints and escalation timelines are
-              provided on our <Link href="/contact" className="text-primary font-semibold hover:underline">Contact & Grievances</Link> page.
+              In compliance with Section 79 of the Information Technology Act, 2000, Rule 3(2) of the Information
+              Technology (Intermediary Guidelines and Digital Media Ethics Code) Rules, 2021, and Rule 5 of the Consumer
+              Protection (E-Commerce) Rules, 2020, RentGoer designates a dedicated Grievance Officer and maintains a formal
+              redressal mechanism.
+            </p>
+            <p>
+              Grievances are acknowledged within 48 hours and redressed within 30 days. Full escalation procedures and
+              officer contact details are detailed on our{' '}
+              <Link href="/contact" className="text-primary font-semibold hover:underline">Contact & Grievances</Link> page.
             </p>
           </div>
         </section>
@@ -292,3 +298,4 @@ export default function TermsOfServicePage() {
     </div>
   );
 }
+

@@ -161,3 +161,4 @@ describe('Footer Component Role-Aware Navigation', () => {
     expect(contactLink).toHaveAttribute('href', '/contact');
   });
 });
+

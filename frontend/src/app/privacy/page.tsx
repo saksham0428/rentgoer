@@ -296,23 +296,29 @@ export default function PrivacyPolicyPage() {
         <section id="dpdp-rights" className="mb-14 scroll-mt-24">
           <h2 className="text-2xl font-bold text-foreground mb-4 flex items-center gap-2">
             <UserCheck className="h-6 w-6 text-primary" />
-            <span>9. Your Rights under India&apos;s DPDP Act</span>
+            <span>9. Your Rights under India&apos;s DPDP Act & Phased Commencement</span>
           </h2>
           <div className="bg-card border border-border/70 rounded-xl p-6 text-sm text-muted leading-relaxed space-y-3">
             <p>
-              RentGoer operates in recognition of India&apos;s Digital Personal Data Protection (DPDP) Act and its implementing
-              framework. As a Data Principal, you have the following rights:
+              The Digital Personal Data Protection Act, 2023 (DPDP Act) was enacted and received Presidential assent in August 2023.
+              Its operational rules, Data Protection Board procedures, and specific compliance schedules are being notified
+              by the Central Government in phases.
+            </p>
+            <p>
+              RentGoer proactively aligns its data governance and architecture with the core principles of the DPDP Act:
             </p>
             <ul className="space-y-2 list-disc list-inside">
-              <li><strong>Right to Access:</strong> Request a summary of your personal data being processed.</li>
-              <li><strong>Right to Correction:</strong> Update or rectify inaccurate or outdated personal details (which you can do directly via your <Link href="/profile" className="text-primary hover:underline">Profile settings</Link>).</li>
-              <li><strong>Right to Grievance Redressal:</strong> Direct questions, concerns, or complaints regarding data processing to our designated Grievance Officer.</li>
-              <li><strong>Right to Nominate:</strong> Designate a representative to exercise rights on your behalf in the event of incapacity.</li>
+              <li><strong>Right to Access:</strong> Request a summary of your personal data being processed and the categories of data shared.</li>
+              <li><strong>Right to Correction & Erasure:</strong> Rectify inaccurate personal details via your <Link href="/profile" className="text-primary hover:underline">Profile settings</Link> or submit an account deletion request via our help desk.</li>
+              <li><strong>Right to Grievance Redressal:</strong> Direct questions, concerns, or complaints regarding data processing to our designated Grievance Officer, acknowledged within 48 hours and resolved within 30 days.</li>
+              <li><strong>Right to Nominate:</strong> Designate a representative to exercise rights on your behalf in the event of death or incapacity.</li>
             </ul>
-            <p className="text-xs text-muted pt-2 italic">
-              Note: RentGoer operates in earnest good faith with India&apos;s evolving privacy standards. Publication of this
-              policy does not imply independent government certification.
-            </p>
+            <div className="bg-muted/10 border border-border/80 rounded-lg p-3.5 text-xs text-muted mt-2 leading-relaxed">
+              <strong>Regulatory Notice:</strong> RentGoer maintains domestic data residency within AWS Asia Pacific (ap-south-1, Mumbai, India),
+              cryptographic bcrypt hashing, and strict Row-Level Security. We make no synthetic claim of independent government
+              accreditation or operational certification, and our compliance framework will continuously adapt as subordinate
+              DPDP rules are officially brought into force.
+            </div>
           </div>
         </section>
 
@@ -351,3 +357,4 @@ export default function PrivacyPolicyPage() {
     </div>
   );
 }
+

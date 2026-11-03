@@ -166,13 +166,19 @@ export default function GuidelinesPage() {
 
             <div className="bg-card border border-border/70 rounded-xl p-6">
               <h3 className="text-base font-bold text-foreground flex items-center gap-2">
-                <span className="text-primary font-black">6.</span> Insist on a Written Rental Agreement
+                <span className="text-primary font-black">6.</span> Insist on a Written Rental Agreement & State Legal Compliance
               </h3>
               <p className="mt-2 text-sm text-muted leading-relaxed">
                 Never rely on verbal understandings. Insist on a written Leave and License or Tenancy Agreement on appropriate
-                stamp paper, executed in accordance with local state rent control or tenancy laws. Ensure all agreed amounts,
-                deposit terms, inventory lists, and notice periods are documented before signing.
+                stamp paper, executed in accordance with your state&apos;s applicable tenancy and rent control legislation.
               </p>
+              <div className="bg-muted/10 border border-border/80 rounded-lg p-3 text-xs text-muted mt-3 leading-relaxed">
+                <strong>Legal Context — Model Tenancy Act, 2021:</strong> The Union Government circulated the Model Tenancy Act,
+                2021 as an advisory template for states to adopt. Tenancy laws remain under state jurisdiction (such as the
+                Maharashtra Rent Control Act, Tamil Nadu Regulation of Rights and Responsibilities of Landlords and Tenants Act,
+                or Karnataka Rent Act). Ensure your agreement complies with your specific state&apos;s statutory requirements,
+                registration rules, and mandatory e-stamping procedures.
+              </div>
             </div>
 
             <div className="bg-card border border-border/70 rounded-xl p-6">
@@ -425,3 +431,4 @@ export default function GuidelinesPage() {
     </div>
   );
 }
+

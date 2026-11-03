@@ -106,9 +106,9 @@ describe('Trust & Legal Content Pages', () => {
       expect(screen.getByRole('heading', { name: /grievance redressal mechanism/i })).toBeInTheDocument();
 
       // Check standard grievance turnaround times
-      expect(screen.getByText(/48 hours/i)).toBeInTheDocument();
-      expect(screen.getByText(/7 days/i)).toBeInTheDocument();
-      expect(screen.getByText(/30 days/i)).toBeInTheDocument();
+      expect(screen.getAllByText(/48 hours/i).length).toBeGreaterThan(0);
+      expect(screen.getAllByText(/7 days/i).length).toBeGreaterThan(0);
+      expect(screen.getAllByText(/30 days/i).length).toBeGreaterThan(0);
 
       // Verify no empty placeholder links
       const links = container.querySelectorAll('a');
